@@ -5,7 +5,19 @@ import { ContentItem, SearchResult, ContentType, MatchType } from "../types";
 
 const searchCache = new Map<string, SearchResult>();
 // The API key is obtained from the environment variable process.env.API_KEY
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const keys = [
+  import.meta.env.VITE_GEMINI_KEY_1,
+  import.meta.env.VITE_GEMINI_KEY_2,
+  import.meta.env.VITE_GEMINI_KEY_3,
+].filter(Boolean);
+
+let idx = 0;
+const getKey = () => keys[idx++ % keys.length];
+
+const ai = new GoogleGenAI({
+  apiKey: getKey()
+});
+
 
 /**
  * Calculates the Levenshtein distance between two strings to handle typos.
