@@ -70,7 +70,7 @@ export class SearchService {
     const cacheKey = `${query}_${contentType || "All"}`;
     if (searchCache.has(cacheKey)) return searchCache.get(cacheKey)!;
 
-    /* ---------- LOCAL SEARCH (OLD BEHAVIOR) ---------- */
+    /* ---------- LOCAL SEARCH (ALWAYS WORKS) ---------- */
 
     const filteredDataset =
       contentType && contentType !== "All"
@@ -90,17 +90,20 @@ export class SearchService {
       .slice(0, 8)
       .map(e => e.item);
 
-    // If Gemini keys missing → return local search only
+    // No Gemini keys → local only
     if (keys.length === 0) {
       return { matches: localMatches };
     }
 
-    /* ---------- GEMINI (OPTIONAL ENHANCEMENT) ---------- */
+    /* ---------- GEMINI WITH AUTO-RETRY ---------- */
 
-    try {
-      const ai = new GoogleGenAI({ apiKey: getKey() });
+    let response: any = null;
 
-      const prompt = `
+    for (let i = 0; i < keys.length; i++) {
+      try {
+        const ai = new GoogleGenAI({ apiKey: getKey() });
+
+        const prompt = `
 You are an intelligent Doraemon content finder.
 
 User query: "${query}"
@@ -128,81 +131,89 @@ Return JSON ONLY:
 }
 `;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              results: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    itemId: { type: Type.STRING },
-                    matchType: { type: Type.STRING },
-                    relevanceScore: { type: Type.INTEGER },
-                    reasoning: {
-                      type: Type.ARRAY,
-                      items: { type: Type.STRING }
-                    }
-                  },
-                  required: [
-                    "itemId",
-                    "matchType",
-                    "relevanceScore",
-                    "reasoning"
-                  ]
+        response = await ai.models.generateContent({
+          model: "gemini-3-flash-preview",
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                results: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      itemId: { type: Type.STRING },
+                      matchType: { type: Type.STRING },
+                      relevanceScore: { type: Type.INTEGER },
+                      reasoning: {
+                        type: Type.ARRAY,
+                        items: { type: Type.STRING }
+                      }
+                    },
+                    required: [
+                      "itemId",
+                      "matchType",
+                      "relevanceScore",
+                      "reasoning"
+                    ]
+                  }
                 }
-              }
-            },
-            required: ["results"]
+              },
+              required: ["results"]
+            }
           }
-        }
-      });
+        });
 
-      let results: any[] = [];
-      try {
-        const parsed = JSON.parse(response.text || "{}");
-        results = parsed.results || [];
-      } catch {
-        results = [];
+        break; // ✅ success → stop trying other keys
+      } catch (err) {
+        console.warn("Gemini key failed, trying next key...");
       }
+    }
 
-      const matches = dataset.filter(d =>
-        results.some((r: any) => r.itemId === d.id)
-      );
-
-      // If Gemini gives nothing → fallback to local
-      if (matches.length === 0) {
-        return { matches: localMatches };
-      }
-
-      const reasoningMap: Record<string, string[]> = {};
-      const matchTypeMap: Record<string, MatchType> = {};
-      const relevanceScoreMap: Record<string, number> = {};
-
-      results.forEach((r: any) => {
-        reasoningMap[r.itemId] = r.reasoning;
-        matchTypeMap[r.itemId] = r.matchType;
-        relevanceScoreMap[r.itemId] = r.relevanceScore;
-      });
-
-      const finalResult = {
-        matches,
-        reasoningMap,
-        matchTypeMap,
-        relevanceScoreMap
-      };
-
-      searchCache.set(cacheKey, finalResult);
-      return finalResult;
-    } catch (e) {
-      console.error("Gemini error:", e);
+    // All keys failed → fallback
+    if (!response) {
       return { matches: localMatches };
     }
+
+    /* ---------- PARSE RESPONSE ---------- */
+
+    let results: any[] = [];
+    try {
+      const parsed = JSON.parse(response.text || "{}");
+      results = parsed.results || [];
+    } catch {
+      results = [];
+    }
+
+    const matches = dataset.filter(d =>
+      results.some((r: any) => r.itemId === d.id)
+    );
+
+    if (matches.length === 0) {
+      return { matches: localMatches };
+    }
+
+    const reasoningMap: Record<string, string[]> = {};
+    const matchTypeMap: Record<string, MatchType> = {};
+    const relevanceScoreMap: Record<string, number> = {};
+
+    results.forEach((r: any) => {
+      reasoningMap[r.itemId] = r.reasoning;
+      matchTypeMap[r.itemId] = r.matchType;
+      relevanceScoreMap[r.itemId] = r.relevanceScore;
+    });
+
+    const finalResult = {
+      matches,
+      reasoningMap,
+      matchTypeMap,
+      relevanceScoreMap
+    };
+
+    searchCache.set(cacheKey, finalResult);
+    return finalResult;
   }
 
   /* =======================
