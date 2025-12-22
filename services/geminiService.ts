@@ -1,6 +1,7 @@
 import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { dataset } from "../data/dataset";
 import { SearchResult, ContentType, MatchType } from "../types";
+import { getCachedSearch, saveCachedSearch } from "../lib/searchCache";
 
 /* =======================
    API KEY ROTATION
@@ -16,14 +17,19 @@ let idx = 0;
 const getKey = () => keys[idx++ % keys.length];
 
 /* =======================
-   CACHE
+   IN-MEMORY CACHE
 ======================= */
 
-const searchCache = new Map<string, SearchResult>();
+const memoryCache = new Map<string, SearchResult>();
 
 /* =======================
    UTILS
 ======================= */
+
+function normalizeKey(query: string, type?: string) {
+  return `${query.toLowerCase().trim()}_${type || "All"}`
+    .replace(/\s+/g, "_");
+}
 
 function getLevenshteinDistance(a: string, b: string): number {
   const matrix: number[][] = [];
@@ -67,10 +73,21 @@ export class SearchService {
   ): Promise<SearchResult> {
     if (!query.trim()) return { matches: [] };
 
-    const cacheKey = `${query}_${contentType || "All"}`;
-    if (searchCache.has(cacheKey)) return searchCache.get(cacheKey)!;
+    const cacheKey = normalizeKey(query, contentType);
 
-    /* ---------- LOCAL SEARCH (ALWAYS WORKS) ---------- */
+    /* ---------- 1️⃣ MEMORY CACHE ---------- */
+    if (memoryCache.has(cacheKey)) {
+      return memoryCache.get(cacheKey)!;
+    }
+
+    /* ---------- 2️⃣ FIRESTORE CACHE ---------- */
+    const firestoreCached = await getCachedSearch(cacheKey);
+    if (firestoreCached) {
+      memoryCache.set(cacheKey, firestoreCached);
+      return firestoreCached;
+    }
+
+    /* ---------- 3️⃣ LOCAL SEARCH ---------- */
 
     const filteredDataset =
       contentType && contentType !== "All"
@@ -90,12 +107,15 @@ export class SearchService {
       .slice(0, 8)
       .map(e => e.item);
 
-    // No Gemini keys → local only
+    // If no Gemini keys → cache & return local
     if (keys.length === 0) {
-      return { matches: localMatches };
+      const localResult = { matches: localMatches };
+      memoryCache.set(cacheKey, localResult);
+      await saveCachedSearch(cacheKey, localResult);
+      return localResult;
     }
 
-    /* ---------- GEMINI WITH AUTO-RETRY ---------- */
+    /* ---------- 4️⃣ GEMINI WITH RETRY ---------- */
 
     let response: any = null;
 
@@ -166,18 +186,20 @@ Return JSON ONLY:
           }
         });
 
-        break; // ✅ success → stop trying other keys
-      } catch (err) {
+        break;
+      } catch {
         console.warn("Gemini key failed, trying next key...");
       }
     }
 
-    // All keys failed → fallback
-    if (!response) {
-      return { matches: localMatches };
-    }
+    /* ---------- 5️⃣ PARSE + FALLBACK ---------- */
 
-    /* ---------- PARSE RESPONSE ---------- */
+    if (!response) {
+      const fallback = { matches: localMatches };
+      memoryCache.set(cacheKey, fallback);
+      await saveCachedSearch(cacheKey, fallback);
+      return fallback;
+    }
 
     let results: any[] = [];
     try {
@@ -191,28 +213,26 @@ Return JSON ONLY:
       results.some((r: any) => r.itemId === d.id)
     );
 
-    if (matches.length === 0) {
-      return { matches: localMatches };
-    }
+    const finalResult =
+      matches.length === 0
+        ? { matches: localMatches }
+        : {
+            matches,
+            reasoningMap: Object.fromEntries(
+              results.map((r: any) => [r.itemId, r.reasoning])
+            ),
+            matchTypeMap: Object.fromEntries(
+              results.map((r: any) => [r.itemId, r.matchType])
+            ),
+            relevanceScoreMap: Object.fromEntries(
+              results.map((r: any) => [r.itemId, r.relevanceScore])
+            )
+          };
 
-    const reasoningMap: Record<string, string[]> = {};
-    const matchTypeMap: Record<string, MatchType> = {};
-    const relevanceScoreMap: Record<string, number> = {};
+    /* ---------- 6️⃣ SAVE CACHES ---------- */
+    memoryCache.set(cacheKey, finalResult);
+    await saveCachedSearch(cacheKey, finalResult);
 
-    results.forEach((r: any) => {
-      reasoningMap[r.itemId] = r.reasoning;
-      matchTypeMap[r.itemId] = r.matchType;
-      relevanceScoreMap[r.itemId] = r.relevanceScore;
-    });
-
-    const finalResult = {
-      matches,
-      reasoningMap,
-      matchTypeMap,
-      relevanceScoreMap
-    };
-
-    searchCache.set(cacheKey, finalResult);
     return finalResult;
   }
 
