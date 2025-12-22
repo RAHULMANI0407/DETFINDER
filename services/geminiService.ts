@@ -23,12 +23,21 @@ const getKey = () => keys[idx++ % keys.length];
 const memoryCache = new Map<string, SearchResult>();
 
 /* =======================
-   UTILS
+   HELPERS
 ======================= */
 
 function normalizeKey(query: string, type?: string) {
   return `${query.toLowerCase().trim()}_${type || "All"}`
     .replace(/\s+/g, "_");
+}
+
+function buildResult(matches: any[]): SearchResult {
+  return {
+    matches,
+    reasoningMap: {},
+    matchTypeMap: {},
+    relevanceScoreMap: {}
+  };
 }
 
 function getLevenshteinDistance(a: string, b: string): number {
@@ -71,7 +80,7 @@ export class SearchService {
     query: string,
     contentType?: ContentType | "All"
   ): Promise<SearchResult> {
-    if (!query.trim()) return { matches: [] };
+    if (!query.trim()) return buildResult([]);
 
     const cacheKey = normalizeKey(query, contentType);
 
@@ -107,9 +116,9 @@ export class SearchService {
       .slice(0, 8)
       .map(e => e.item);
 
-    // If no Gemini keys → cache & return local
+    // No Gemini keys → return local
     if (keys.length === 0) {
-      const localResult = { matches: localMatches };
+      const localResult = buildResult(localMatches);
       memoryCache.set(cacheKey, localResult);
       await saveCachedSearch(cacheKey, localResult);
       return localResult;
@@ -195,7 +204,7 @@ Return JSON ONLY:
     /* ---------- 5️⃣ PARSE + FALLBACK ---------- */
 
     if (!response) {
-      const fallback = { matches: localMatches };
+      const fallback = buildResult(localMatches);
       memoryCache.set(cacheKey, fallback);
       await saveCachedSearch(cacheKey, fallback);
       return fallback;
@@ -215,7 +224,7 @@ Return JSON ONLY:
 
     const finalResult =
       matches.length === 0
-        ? { matches: localMatches }
+        ? buildResult(localMatches)
         : {
             matches,
             reasoningMap: Object.fromEntries(
@@ -229,7 +238,6 @@ Return JSON ONLY:
             )
           };
 
-    /* ---------- 6️⃣ SAVE CACHES ---------- */
     memoryCache.set(cacheKey, finalResult);
     await saveCachedSearch(cacheKey, finalResult);
 
