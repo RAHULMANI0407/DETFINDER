@@ -1,6 +1,6 @@
 import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { dataset } from "../data/dataset";
-import { ContentItem, SearchResult, ContentType, MatchType } from "../types";
+import { SearchResult, ContentType, MatchType } from "../types";
 
 /* =======================
    API KEY ROTATION
@@ -70,14 +70,37 @@ export class SearchService {
     const cacheKey = `${query}_${contentType || "All"}`;
     if (searchCache.has(cacheKey)) return searchCache.get(cacheKey)!;
 
-    const ai = new GoogleGenAI({ apiKey: getKey() });
+    /* ---------- LOCAL SEARCH (OLD BEHAVIOR) ---------- */
 
     const filteredDataset =
       contentType && contentType !== "All"
         ? dataset.filter(d => d.type === contentType)
         : dataset;
 
-    const prompt = `
+    const localMatches = filteredDataset
+      .map(item => ({
+        item,
+        score: Math.max(
+          getFuzzyScore(query, item.title),
+          Math.max(...item.keywords.map(k => getFuzzyScore(query, k)))
+        )
+      }))
+      .filter(e => e.score > 0.6)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8)
+      .map(e => e.item);
+
+    // If Gemini keys missing → return local search only
+    if (keys.length === 0) {
+      return { matches: localMatches };
+    }
+
+    /* ---------- GEMINI (OPTIONAL ENHANCEMENT) ---------- */
+
+    try {
+      const ai = new GoogleGenAI({ apiKey: getKey() });
+
+      const prompt = `
 You are an intelligent Doraemon content finder.
 
 User query: "${query}"
@@ -92,14 +115,19 @@ ${filteredDataset
   )
   .join("\n")}
 
-Return JSON with:
-- itemId
-- matchType
-- relevanceScore (0-100)
-- reasoning
+Return JSON ONLY:
+{
+  "results": [
+    {
+      "itemId": "string",
+      "matchType": "Keyword-based | Title-match | Story-based | Scene-based",
+      "relevanceScore": number,
+      "reasoning": [string]
+    }
+  ]
+}
 `;
 
-    try {
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: prompt,
@@ -135,12 +163,22 @@ Return JSON with:
         }
       });
 
-      const parsed = JSON.parse(response.text || "{}");
-      const results = parsed.results || [];
+      let results: any[] = [];
+      try {
+        const parsed = JSON.parse(response.text || "{}");
+        results = parsed.results || [];
+      } catch {
+        results = [];
+      }
 
       const matches = dataset.filter(d =>
         results.some((r: any) => r.itemId === d.id)
       );
+
+      // If Gemini gives nothing → fallback to local
+      if (matches.length === 0) {
+        return { matches: localMatches };
+      }
 
       const reasoningMap: Record<string, string[]> = {};
       const matchTypeMap: Record<string, MatchType> = {};
@@ -163,7 +201,7 @@ Return JSON with:
       return finalResult;
     } catch (e) {
       console.error("Gemini error:", e);
-      return { matches: [] };
+      return { matches: localMatches };
     }
   }
 
@@ -172,6 +210,10 @@ Return JSON with:
   ======================= */
 
   static startChat(): Chat {
+    if (keys.length === 0) {
+      throw new Error("No Gemini API keys available");
+    }
+
     const ai = new GoogleGenAI({ apiKey: getKey() });
 
     return ai.chats.create({
