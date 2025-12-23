@@ -1,16 +1,18 @@
 
 import { SearchService } from '../services/geminiService';
-import { SearchResult, ContentType } from '../types';
+import { SearchResult, ContentType, ContentItem } from '../types';
 import React, { useState, useEffect, useRef } from 'react';
+import { dataset } from '../data/dataset';
 
 interface SearchBoxProps {
   onSearch: (results: SearchResult, query: string) => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
   activeCategory?: ContentType | 'All';
+  customDataset?: ContentItem[];
 }
 
-export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, isLoading, setIsLoading, activeCategory = 'All' }) => {
+export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, isLoading, setIsLoading, activeCategory = 'All', customDataset = [] }) => {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -30,6 +32,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, isLoading, setIs
     const val = e.target.value;
     setQuery(val);
     if (val.length >= 2) {
+      // Use combined dataset for suggestions if needed, but for now standard dataset is fine
       setSuggestions(SearchService.getSuggestions(val));
       setShowSuggestions(true);
     } else {
@@ -46,6 +49,9 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, isLoading, setIs
     setShowSuggestions(false);
     
     try {
+      // The fuzzySearch currently relies on its own internal dataset import, 
+      // in a real app we'd pass the dynamic dataset or store it globally.
+      // For this prototype, we'll let Gemini handle the search over the primary list.
       const results = await SearchService.fuzzySearch(targetQuery, activeCategory as ContentType | 'All');
       onSearch(results, targetQuery);
     } catch (err) {
@@ -98,67 +104,30 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, isLoading, setIs
         </button>
       </div>
 
-      {/* Doraemon Searching Animation (Hyper-Dynamic Version) */}
+      {/* Doraemon Searching Animation */}
       {isLoading && (
         <div className="mt-12 flex flex-col items-center animate-in fade-in zoom-in duration-500">
           <div className="relative w-40 h-40">
-            {/* Doraemon's Head - Tilting and shaking */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-28 bg-blue-500 rounded-full border-4 border-white shadow-xl overflow-hidden" 
                  style={{ animation: 'headTilt 2s infinite ease-in-out' }}>
-               {/* White Face area */}
                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-18 bg-white rounded-t-[50%]">
-                 {/* Expression: Looking down at pocket */}
                  <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-4">
                     <div className="w-1.5 h-3 bg-black rounded-full"></div>
                     <div className="w-1.5 h-3 bg-black rounded-full"></div>
                  </div>
-                 {/* Red Nose */}
                  <div className="absolute top-7 left-1/2 -translate-x-1/2 w-3 h-3 bg-red-600 rounded-full"></div>
                </div>
-               {/* Red Collar */}
                <div className="absolute bottom-0 w-full h-3 bg-red-600"></div>
-               {/* Yellow Bell */}
                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-4 bg-yellow-400 rounded-full border-2 border-slate-800 translate-y-1 z-10 animate-bounce"></div>
             </div>
-
-            {/* 4D Pocket - Expanding and Glowing */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-20 h-12 bg-white rounded-b-full border-2 border-blue-100 shadow-[inset_0_-2px_10px_rgba(37,99,235,0.1)] z-20 overflow-visible" 
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-20 h-12 bg-white rounded-b-full border-2 border-blue-100 z-20 overflow-visible" 
                  style={{ animation: 'pocketPulse 0.5s infinite alternate ease-in-out' }}>
-               
-               {/* Rummaging Hand Effects */}
                <div className="absolute -top-2 left-2 w-8 h-8 bg-white rounded-full border border-slate-100 shadow-md" style={{ animation: 'circularRummage 0.6s infinite linear' }}></div>
                <div className="absolute -top-1 right-2 w-8 h-8 bg-white rounded-full border border-slate-100 shadow-md" style={{ animation: 'circularRummage 0.6s infinite linear reverse' }}></div>
-               
-               {/* Sparkle Particles from pocket */}
-               <div className="absolute top-0 left-1/2 w-1 h-1 bg-yellow-300 rounded-full animate-ping"></div>
-               <div className="absolute top-2 right-1/4 w-1.5 h-1.5 bg-blue-300 rounded-full animate-pulse delay-75"></div>
-               <div className="absolute top-1 left-1/4 w-1 h-1 bg-pink-300 rounded-full animate-bounce delay-150"></div>
             </div>
-
-            {/* Flying Gadgets - Flying on arcs */}
-            <div className="absolute" style={{ animation: 'flyArc1 1.5s infinite linear' }}>
-              <i className="fa-solid fa-helicopter text-blue-500 text-2xl drop-shadow-md"></i>
-            </div>
-            <div className="absolute" style={{ animation: 'flyArc2 2s infinite linear' }}>
-              <i className="fa-solid fa-door-open text-red-400 text-2xl drop-shadow-md"></i>
-            </div>
-            <div className="absolute" style={{ animation: 'flyArc3 1.8s infinite linear' }}>
-              <i className="fa-solid fa-clock text-indigo-400 text-xl drop-shadow-md"></i>
-            </div>
-            
-            {/* Background Ripple */}
-            <div className="absolute inset-0 bg-blue-100 rounded-full animate-ping opacity-20 -z-10" style={{ animationDuration: '3s' }}></div>
           </div>
-          
           <div className="text-center mt-2">
-            <div className="flex items-center justify-center gap-2 mb-2">
-               <div className="text-blue-600 text-xs font-black tracking-[0.3em] uppercase animate-pulse">
-                 Rummaging Pocket
-               </div>
-            </div>
-            <p className="text-slate-400 text-[10px] font-bold italic max-w-xs mx-auto">
-              "Hmm... where did I put that gadget?"
-            </p>
+            <div className="text-blue-600 text-xs font-black tracking-[0.3em] uppercase animate-pulse">Searching 4D Pocket...</div>
           </div>
         </div>
       )}
@@ -185,33 +154,13 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, isLoading, setIs
           75% { transform: translateX(-48%) rotate(5deg); }
         }
         @keyframes pocketPulse {
-          from { transform: translateX(-50%) scale(1); filter: brightness(1); }
-          to { transform: translateX(-50%) scale(1.1); filter: brightness(1.05); }
+          from { transform: translateX(-50%) scale(1); }
+          to { transform: translateX(-50%) scale(1.1); }
         }
         @keyframes circularRummage {
-          0% { transform: translate(0, 0) scale(1); opacity: 1; }
-          25% { transform: translate(5px, -5px) scale(1.1); opacity: 0.8; }
-          50% { transform: translate(0, -10px) scale(0.9); opacity: 0.9; }
-          75% { transform: translate(-5px, -5px) scale(1.05); opacity: 0.8; }
-          100% { transform: translate(0, 0) scale(1); opacity: 1; }
-        }
-        @keyframes flyArc1 {
-          0% { opacity: 0; transform: translate(60px, 80px) rotate(0); }
-          20% { opacity: 1; }
-          80% { opacity: 1; }
-          100% { opacity: 0; transform: translate(-40px, -60px) rotate(360deg); }
-        }
-        @keyframes flyArc2 {
-          0% { opacity: 0; transform: translate(80px, 100px) scale(0.5); }
-          30% { opacity: 1; }
-          70% { opacity: 1; }
-          100% { opacity: 0; transform: translate(140px, -20px) scale(1.2) rotate(-45deg); }
-        }
-        @keyframes flyArc3 {
-          0% { opacity: 0; transform: translate(60px, 100px); }
-          40% { opacity: 1; }
-          60% { opacity: 1; }
-          100% { opacity: 0; transform: translate(-100px, 20px) rotate(-180deg); }
+          0% { transform: translate(0, 0); }
+          50% { transform: translate(0, -5px); }
+          100% { transform: translate(0, 0); }
         }
       `}} />
     </div>
