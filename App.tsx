@@ -8,7 +8,7 @@ import { Login } from './components/Login';
 import { AdminDashboard } from './components/AdminDashboard';
 import { ContentType, SearchResult, User, UserRole, ContentItem } from './types';
 
-const SEARCH_LIMIT = 5;
+const SEARCH_LIMIT = 3;
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
