@@ -17,9 +17,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onClose }) => {
     setError('');
 
     // Mock authentication
-    if (username === 'admin' && password === 'admin123') {
+    if (username === 'rahuldet' && password === 'rahuldet24') {
       onLogin({ id: '1', username: 'Admin', role: UserRole.ADMIN });
-    } else if (username === 'user' && password === 'user123') {
+    } else if (username === 'testing' && password === 'det1') {
       onLogin({ id: '2', username: 'User', role: UserRole.USER });
     } else {
       setError('Invalid credentials. Hint: admin/admin123 or user/user123');
