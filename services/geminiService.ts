@@ -27,8 +27,15 @@ const memoryCache = new Map<string, SearchResult>();
 ======================= */
 
 function normalizeKey(query: string, type?: string) {
-  return `${query.toLowerCase().trim()}_${type || "All"}`
-    .replace(/\s+/g, "_");
+  return query
+    .toLowerCase()
+    .trim()
+    .replace(/feeds?/g, "feed")   // feeds → feed
+    .replace(/[^a-z0-9\s]/g, "")  // remove symbols
+    .split(" ")
+    .filter(w => w.length > 2)    // remove small words
+    .sort()                       // order words
+    .join("_") + `_${type || "All"}`;
 }
 
 function buildResult(matches: any[]): SearchResult {
