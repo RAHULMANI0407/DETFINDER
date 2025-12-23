@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { dataset as initialDataset } from './data/dataset';
 import { SearchBox } from './components/SearchBox';
