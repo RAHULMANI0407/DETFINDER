@@ -234,7 +234,7 @@ const App: React.FC = () => {
           <div className="max-w-4xl mx-auto text-center px-4">
             {!isShowingList && (
               <div className="animate-in fade-in slide-in-from-top-4 duration-1000">
-                <div className="inline-block px-4 py-1.5 mb-6 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest shadow-sm">Powered by DET & Gemini AI</div>
+                <div className="inline-block px-4 py-1.5 mb-6 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest shadow-sm">Powered by DET</div>
                 <h2 className="text-4xl sm:text-6xl font-extrabold text-slate-900 mb-6 leading-tight tracking-tight">Find Your Favorite <br /> <span className="text-blue-600">Doraemon</span> Moment.</h2>
                 <p className="text-base sm:text-lg text-slate-500 mb-10 max-w-xl mx-auto leading-relaxed">Search episodes, movies, and specials in Tamil. <br className="hidden sm:block" /> Describe the story and our AI finds the link.</p>
               </div>
