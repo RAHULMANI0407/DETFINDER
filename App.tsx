@@ -28,22 +28,15 @@ const App: React.FC = () => {
 
   const isShowingList = searchResults !== null || activeCategory !== 'All';
 
-  // Core sorting logic: Type priority first, then relevance score
   const allFilteredResults = useMemo(() => {
     if (searchResults) {
       let items = [...searchResults.matches];
-      
-      // Category filter
       if (activeCategory !== 'All') {
         items = items.filter(item => item.type === activeCategory);
       }
-
-      // Multi-layer sort
       items.sort((a, b) => {
         const typeA = searchResults.matchTypeMap?.[a.id] || '';
         const typeB = searchResults.matchTypeMap?.[b.id] || '';
-        
-        // Priority weightings: lower is higher priority
         const priority: Record<string, number> = { 
           'Title-match': 1, 
           'Story-based': 2, 
@@ -51,45 +44,32 @@ const App: React.FC = () => {
           'Scene-based': 4, 
           'Keyword-based': 5 
         };
-        
         const pA = priority[typeA] || 99;
         const pB = priority[typeB] || 99;
-        
-        // Primary Sort: Match Category
         if (pA !== pB) return pA - pB;
-        
-        // Secondary Sort: Relevance Score within the same category
         const scoreA = searchResults.relevanceScoreMap?.[a.id] || 0;
         const scoreB = searchResults.relevanceScoreMap?.[b.id] || 0;
         return scoreB - scoreA;
       });
-      
       return items;
     }
-
     if (activeCategory !== 'All') {
       return dataset.filter(item => item.type === activeCategory);
     }
     return [];
   }, [searchResults, activeCategory]);
 
-  // Distinct groups for rendering sections
   const { bestMatches, relatedMatches } = useMemo(() => {
     if (!searchResults) return { bestMatches: [], relatedMatches: allFilteredResults };
-    
-    // "Best Match" are those that are either Title-matches or have very high relevance (e.g. 95+)
     const best = allFilteredResults.filter(item => {
       const type = searchResults.matchTypeMap?.[item.id];
       const score = searchResults.relevanceScoreMap?.[item.id] || 0;
       return type === 'Title-match' || score >= 95;
     });
-    
-    // Everything else is "Related"
     const related = allFilteredResults.filter(item => {
       const isBest = best.some(b => b.id === item.id);
       return !isBest;
     });
-    
     return { bestMatches: best, relatedMatches: related };
   }, [allFilteredResults, searchResults]);
 
@@ -99,11 +79,11 @@ const App: React.FC = () => {
       setSearchResults(results);
       setCurrentQuery(query);
       setIsTransitioning(false);
-      
-      // Smooth scroll to results
       setTimeout(() => {
         const resultsSection = document.getElementById('results-section');
-        if (resultsSection) resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (resultsSection) {
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       }, 100);
     }, 300);
   };
@@ -120,7 +100,10 @@ const App: React.FC = () => {
   };
 
   const handleNavClick = (type: ContentType | 'All') => {
-    if (activeCategory === type && !searchResults) return;
+    if (activeCategory === type && !searchResults) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+    }
     setIsTransitioning(true);
     setTimeout(() => {
       if (type === 'All') {
@@ -135,17 +118,35 @@ const App: React.FC = () => {
       setIsTransitioning(false);
       setTimeout(() => {
         const resultsSection = document.getElementById('results-section');
-        if (resultsSection) resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (resultsSection) {
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
       }, 50);
     }, 300);
   };
 
+  const scrollToSearch = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => {
+      const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
+      if (searchInput) {
+        searchInput.focus();
+        // Visual feedback for focus on mobile
+        searchInput.parentElement?.classList.add('ring-4', 'ring-blue-100');
+        setTimeout(() => searchInput.parentElement?.classList.remove('ring-4', 'ring-blue-100'), 1500);
+      }
+    }, 300);
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8fafc]">
+    <div className="min-h-screen flex flex-col bg-[#f8fafc] pb-[80px] md:pb-0">
       <FollowPopup isVisible={showFollowPopup} onClose={closeFollowPopup} />
       <AIAssistant />
       
-      <header className="bg-white border-b border-blue-100 sticky top-0 z-40 shadow-sm">
+      {/* Top Header */}
+      <header className="bg-white border-b border-blue-100 sticky top-0 z-[45] shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer group" onClick={resetSearch}>
             <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white text-lg shadow-lg group-hover:scale-110 transition-transform">
@@ -158,18 +159,70 @@ const App: React.FC = () => {
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Powered by DET</span>
             </div>
           </div>
-          <div className="hidden sm:flex items-center gap-4">
-            <button onClick={() => handleNavClick('All')} className={`text-sm font-bold transition-all px-4 py-1.5 rounded-full border ${activeCategory === 'All' && !searchResults ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100'}`}>All Content</button>
+
+          {/* Desktop Nav */}
+          <div className="hidden md:flex items-center gap-4">
+            <button onClick={() => handleNavClick('All')} className={`text-sm font-bold transition-all px-4 py-1.5 rounded-full border ${activeCategory === 'All' && !searchResults ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100'}`}>Movie Finder</button>
             <button onClick={() => handleNavClick(ContentType.MOVIE)} className={`text-sm font-semibold transition-colors ${activeCategory === ContentType.MOVIE ? 'text-blue-600 underline underline-offset-4 decoration-2' : 'text-slate-600 hover:text-blue-600'}`}>Movies</button>
             <button onClick={() => handleNavClick(ContentType.EPISODE)} className={`text-sm font-semibold transition-colors ${activeCategory === ContentType.EPISODE ? 'text-blue-600 underline underline-offset-4 decoration-2' : 'text-slate-600 hover:text-blue-600'}`}>Episodes</button>
             <button onClick={() => handleNavClick(ContentType.SPECIAL)} className={`text-sm font-semibold transition-colors ${activeCategory === ContentType.SPECIAL ? 'text-blue-600 underline underline-offset-4 decoration-2' : 'text-slate-600 hover:text-blue-600'}`}>Specials</button>
           </div>
+
           <a href="https://t.me/doraemon_ever_tamil" target="_blank" className="bg-[#229ED9] text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#1e88ba] transition-all shadow-md flex items-center gap-2">
             <i className="fa-brands fa-telegram"></i>
-            Join Telegram
+            <span className="hidden sm:inline">Join Telegram</span>
           </a>
         </div>
       </header>
+
+      {/* Persistent Bottom Navigation for Mobile Devices */}
+      <nav className="fixed bottom-0 left-0 right-0 z-[55] bg-white/95 backdrop-blur-md border-t border-blue-100 flex items-center justify-around pt-3 pb-6 px-4 md:hidden shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
+        <button 
+          onClick={() => handleNavClick('All')} 
+          className={`flex flex-col items-center gap-1.5 transition-all ${activeCategory === 'All' && !searchResults ? 'text-blue-600' : 'text-slate-400'}`}
+        >
+          <div className={`p-2 rounded-xl transition-colors ${activeCategory === 'All' && !searchResults ? 'bg-blue-50' : ''}`}>
+            <i className="fa-solid fa-house text-xl"></i>
+          </div>
+          <span className="text-[10px] font-extrabold uppercase tracking-tight">Home</span>
+        </button>
+        <button 
+          onClick={() => handleNavClick(ContentType.MOVIE)} 
+          className={`flex flex-col items-center gap-1.5 transition-all ${activeCategory === ContentType.MOVIE ? 'text-blue-600' : 'text-slate-400'}`}
+        >
+          <div className={`p-2 rounded-xl transition-colors ${activeCategory === ContentType.MOVIE ? 'bg-blue-50' : ''}`}>
+            <i className="fa-solid fa-film text-xl"></i>
+          </div>
+          <span className="text-[10px] font-extrabold uppercase tracking-tight">Movies</span>
+        </button>
+        <button 
+          onClick={() => handleNavClick(ContentType.EPISODE)} 
+          className={`flex flex-col items-center gap-1.5 transition-all ${activeCategory === ContentType.EPISODE ? 'text-blue-600' : 'text-slate-400'}`}
+        >
+          <div className={`p-2 rounded-xl transition-colors ${activeCategory === ContentType.EPISODE ? 'bg-blue-50' : ''}`}>
+            <i className="fa-solid fa-tv text-xl"></i>
+          </div>
+          <span className="text-[10px] font-extrabold uppercase tracking-tight">Episodes</span>
+        </button>
+        <button 
+          onClick={() => handleNavClick(ContentType.SPECIAL)} 
+          className={`flex flex-col items-center gap-1.5 transition-all ${activeCategory === ContentType.SPECIAL ? 'text-blue-600' : 'text-slate-400'}`}
+        >
+          <div className={`p-2 rounded-xl transition-colors ${activeCategory === ContentType.SPECIAL ? 'bg-blue-50' : ''}`}>
+            <i className="fa-solid fa-star text-xl"></i>
+          </div>
+          <span className="text-[10px] font-extrabold uppercase tracking-tight">Specials</span>
+        </button>
+        <button 
+          onClick={scrollToSearch} 
+          className="flex flex-col items-center gap-1.5 text-blue-600 group active:scale-95 transition-transform"
+        >
+          <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center -translate-y-6 shadow-xl shadow-blue-300 ring-4 ring-white">
+            <i className="fa-solid fa-magnifying-glass text-lg"></i>
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-tight -mt-5">AI Finder</span>
+        </button>
+      </nav>
 
       <main className="flex-grow">
         <a href="https://www.instagram.com/doraemon_ever_tamil/" target="_blank" rel="noopener noreferrer" className="block bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 text-white text-center py-2.5 px-4 text-xs sm:text-sm font-bold shadow-md hover:brightness-110 transition-all sticky top-[61px] z-30">
@@ -262,22 +315,59 @@ const App: React.FC = () => {
         )}
       </main>
 
-      <footer className="bg-slate-900 text-white pt-12 pb-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center">
-          <div className="flex items-center justify-center gap-2 mb-6 opacity-50">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white text-xs">
-              <i className="fa-solid fa-robot"></i>
+      {/* Footer Navigation Section */}
+      <footer className="bg-slate-900 text-white pt-16 pb-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-12 mb-16 text-center sm:text-left">
+            <div>
+              <div className="flex items-center justify-center sm:justify-start gap-2 mb-6">
+                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white text-lg shadow-lg">
+                  <i className="fa-solid fa-robot"></i>
+                </div>
+                <h1 className="text-xl font-black tracking-tighter uppercase">
+                  DET<span className="text-white/70">FINDER</span>
+                </h1>
+              </div>
+              <p className="text-slate-400 text-sm leading-relaxed mb-6">
+                Your future pocket assistant for everything Doraemon. Find your favorite moments, movies, and episodes in Tamil instantly.
+              </p>
             </div>
-            <h1 className="text-sm font-black tracking-tighter uppercase">
-              DET<span className="text-white/70">FINDER</span>
-            </h1>
+            
+            <div className="flex flex-col gap-4">
+              <h4 className="text-xs font-black uppercase tracking-[0.3em] text-blue-400 mb-2">Navigation</h4>
+              <button onClick={() => handleNavClick('All')} className="text-slate-400 hover:text-white transition-colors text-sm font-bold">Movie Finder</button>
+              <button onClick={() => handleNavClick(ContentType.MOVIE)} className="text-slate-400 hover:text-white transition-colors text-sm font-bold">Movies</button>
+              <button onClick={() => handleNavClick(ContentType.EPISODE)} className="text-slate-400 hover:text-white transition-colors text-sm font-bold">Episodes</button>
+              <button onClick={() => handleNavClick(ContentType.SPECIAL)} className="text-slate-400 hover:text-white transition-colors text-sm font-bold">Specials</button>
+              <button onClick={scrollToSearch} className="text-blue-400 hover:text-blue-300 transition-colors text-sm font-black italic">AI Finder</button>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <h4 className="text-xs font-black uppercase tracking-[0.3em] text-blue-400 mb-2">Connect</h4>
+              <a href="https://t.me/doraemon_ever_tamil" target="_blank" className="flex items-center justify-center sm:justify-start gap-3 text-slate-400 hover:text-[#229ED9] transition-colors text-sm font-bold">
+                <i className="fa-brands fa-telegram text-xl"></i> Telegram Channel
+              </a>
+              <a href="https://www.instagram.com/doraemon_ever_tamil/" target="_blank" className="flex items-center justify-center sm:justify-start gap-3 text-slate-400 hover:text-pink-400 transition-colors text-sm font-bold">
+                <i className="fa-brands fa-instagram text-xl"></i> Instagram Feed
+              </a>
+            </div>
           </div>
-          <p className="text-slate-400 text-[10px] font-bold tracking-[0.2em] uppercase mb-4">Crafted for Doraemon Fans in Tamil • Powered by DET</p>
-          <div className="flex justify-center gap-6 mb-8 text-slate-500">
-             <a href="https://t.me/doraemon_ever_tamil" className="hover:text-blue-400 transition-colors"><i className="fa-brands fa-telegram text-xl"></i></a>
-             <a href="https://www.instagram.com/doraemon_ever_tamil/" className="hover:text-pink-400 transition-colors"><i className="fa-brands fa-instagram text-xl"></i></a>
+
+          <div className="pt-8 border-t border-slate-800 text-center">
+            <p className="text-slate-500 text-[10px] font-bold tracking-[0.2em] uppercase mb-4">
+              Crafted for Doraemon Fans in Tamil • Powered by DET
+            </p>
+            <p className="text-slate-600 text-[10px] font-medium tracking-wide mb-6">
+              &copy; {new Date().getFullYear()} DET Finder. All rights reserved. 22nd Century Edition.
+            </p>
+            
+            {/* Legal Disclaimer */}
+            <div className="max-w-3xl mx-auto px-4">
+              <p className="text-slate-600 text-[9px] leading-relaxed uppercase tracking-tight font-medium opacity-80">
+                Disclaimer: DET Finder is a fan-made project and is not affiliated with, endorsed by, or connected to Fujiko F. Fujio, Shin-Ei Animation, TV Asahi, or any official Doraemon copyright holders. All images, characters, and content mentioned are the property of their respective owners. This tool is provided for educational and community-finding purposes only.
+              </p>
+            </div>
           </div>
-          <p className="text-slate-500 text-xs font-medium tracking-wide">&copy; {new Date().getFullYear()} DET Finder. All rights reserved.</p>
         </div>
       </footer>
     </div>
