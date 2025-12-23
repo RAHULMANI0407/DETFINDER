@@ -1,30 +1,108 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { dataset } from './data/dataset';
+import { dataset as initialDataset } from './data/dataset';
 import { SearchBox } from './components/SearchBox';
 import { ResultCard } from './components/ResultCard';
 import { FollowPopup } from './components/FollowPopup';
 import { AIAssistant } from './components/AIAssistant';
-import { ContentType, SearchResult } from './types';
+import { Login } from './components/Login';
+import { AdminDashboard } from './components/AdminDashboard';
+import { ContentType, SearchResult, User, UserRole, ContentItem } from './types';
+
+const SEARCH_LIMIT = 5;
 
 const App: React.FC = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [customDataset, setCustomDataset] = useState<ContentItem[]>([]);
+  
   const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
   const [activeCategory, setActiveCategory] = useState<ContentType | 'All'>('All');
   const [isLoading, setIsLoading] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [currentQuery, setCurrentQuery] = useState('');
   const [showFollowPopup, setShowFollowPopup] = useState(false);
+  const [searchCount, setSearchCount] = useState(0);
 
+  // Initialize search count and custom data from local storage
   useEffect(() => {
+    const storedUser = localStorage.getItem('det_user');
+    if (storedUser) setUser(JSON.parse(storedUser));
+
+    const storedCustom = localStorage.getItem('det_custom_data');
+    if (storedCustom) setCustomDataset(JSON.parse(storedCustom));
+
+    const today = new Date().toDateString();
+    const storedSearchData = localStorage.getItem('det_search_limit');
+    if (storedSearchData) {
+      const { count, date } = JSON.parse(storedSearchData);
+      if (date === today) {
+        setSearchCount(count);
+      } else {
+        localStorage.setItem('det_search_limit', JSON.stringify({ count: 0, date: today }));
+        setSearchCount(0);
+      }
+    } else {
+      localStorage.setItem('det_search_limit', JSON.stringify({ count: 0, date: today }));
+    }
+
     const timer = setTimeout(() => {
       setShowFollowPopup(true);
     }, 2000);
     return () => clearTimeout(timer);
   }, []);
 
-  const closeFollowPopup = () => {
-    setShowFollowPopup(false);
+  const combinedDataset = useMemo(() => [...initialDataset, ...customDataset], [customDataset]);
+
+  const handleLogin = (u: User) => {
+    setUser(u);
+    localStorage.setItem('det_user', JSON.stringify(u));
+    setShowLogin(false);
   };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('det_user');
+    setShowAdmin(false);
+  };
+
+  const handleAddItem = (item: ContentItem) => {
+    const updated = [...customDataset, item];
+    setCustomDataset(updated);
+    localStorage.setItem('det_custom_data', JSON.stringify(updated));
+  };
+
+  const handleSearch = (results: SearchResult, query: string) => {
+    // Security check: ensure user exists
+    if (!user) {
+      setShowLogin(true);
+      return;
+    }
+
+    // If user role is USER, increment and check limit
+    if (user.role === UserRole.USER) {
+      const today = new Date().toDateString();
+      const newCount = searchCount + 1;
+      setSearchCount(newCount);
+      localStorage.setItem('det_search_limit', JSON.stringify({ count: newCount, date: today }));
+    }
+
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setSearchResults(results);
+      setCurrentQuery(query);
+      setIsTransitioning(false);
+      setTimeout(() => {
+        const resultsSection = document.getElementById('results-section');
+        if (resultsSection) {
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }, 300);
+  };
+
+  const isLimitReached = user?.role === UserRole.USER && searchCount >= SEARCH_LIMIT;
 
   const isShowingList = searchResults !== null || activeCategory !== 'All';
 
@@ -54,10 +132,10 @@ const App: React.FC = () => {
       return items;
     }
     if (activeCategory !== 'All') {
-      return dataset.filter(item => item.type === activeCategory);
+      return combinedDataset.filter(item => item.type === activeCategory);
     }
     return [];
-  }, [searchResults, activeCategory]);
+  }, [searchResults, activeCategory, combinedDataset]);
 
   const { bestMatches, relatedMatches } = useMemo(() => {
     if (!searchResults) return { bestMatches: [], relatedMatches: allFilteredResults };
@@ -72,21 +150,6 @@ const App: React.FC = () => {
     });
     return { bestMatches: best, relatedMatches: related };
   }, [allFilteredResults, searchResults]);
-
-  const handleSearch = (results: SearchResult, query: string) => {
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setSearchResults(results);
-      setCurrentQuery(query);
-      setIsTransitioning(false);
-      setTimeout(() => {
-        const resultsSection = document.getElementById('results-section');
-        if (resultsSection) {
-            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 100);
-    }, 300);
-  };
 
   const resetSearch = () => {
     setIsTransitioning(true);
@@ -133,7 +196,6 @@ const App: React.FC = () => {
       const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
       if (searchInput) {
         searchInput.focus();
-        // Visual feedback for focus on mobile
         searchInput.parentElement?.classList.add('ring-4', 'ring-blue-100');
         setTimeout(() => searchInput.parentElement?.classList.remove('ring-4', 'ring-blue-100'), 1500);
       }
@@ -142,9 +204,12 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f8fafc] pb-[80px] md:pb-0">
-      <FollowPopup isVisible={showFollowPopup} onClose={closeFollowPopup} />
+      <FollowPopup isVisible={showFollowPopup} onClose={() => setShowFollowPopup(false)} />
       <AIAssistant />
       
+      {showLogin && <Login onLogin={handleLogin} onClose={() => setShowLogin(false)} />}
+      {showAdmin && <AdminDashboard onAddItem={handleAddItem} onClose={() => setShowAdmin(false)} />}
+
       {/* Top Header */}
       <header className="bg-white border-b border-blue-100 sticky top-0 z-[45] shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
@@ -160,18 +225,45 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-4">
-            <button onClick={() => handleNavClick('All')} className={`text-sm font-bold transition-all px-4 py-1.5 rounded-full border ${activeCategory === 'All' && !searchResults ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100'}`}>Movie Finder</button>
-            <button onClick={() => handleNavClick(ContentType.MOVIE)} className={`text-sm font-semibold transition-colors ${activeCategory === ContentType.MOVIE ? 'text-blue-600 underline underline-offset-4 decoration-2' : 'text-slate-600 hover:text-blue-600'}`}>Movies</button>
-            <button onClick={() => handleNavClick(ContentType.EPISODE)} className={`text-sm font-semibold transition-colors ${activeCategory === ContentType.EPISODE ? 'text-blue-600 underline underline-offset-4 decoration-2' : 'text-slate-600 hover:text-blue-600'}`}>Episodes</button>
-            <button onClick={() => handleNavClick(ContentType.SPECIAL)} className={`text-sm font-semibold transition-colors ${activeCategory === ContentType.SPECIAL ? 'text-blue-600 underline underline-offset-4 decoration-2' : 'text-slate-600 hover:text-blue-600'}`}>Specials</button>
+          <div className="hidden lg:flex items-center gap-4">
+            <button onClick={() => handleNavClick('All')} className={`text-xs font-black transition-all px-4 py-1.5 rounded-full border ${activeCategory === 'All' && !searchResults ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100'}`}>MOVIE FINDER</button>
+            <button onClick={() => handleNavClick(ContentType.MOVIE)} className={`text-xs font-bold transition-colors ${activeCategory === ContentType.MOVIE ? 'text-blue-600 underline underline-offset-4 decoration-2' : 'text-slate-500 hover:text-blue-600'}`}>MOVIES</button>
+            <button onClick={() => handleNavClick(ContentType.EPISODE)} className={`text-xs font-bold transition-colors ${activeCategory === ContentType.EPISODE ? 'text-blue-600 underline underline-offset-4 decoration-2' : 'text-slate-500 hover:text-blue-600'}`}>EPISODES</button>
+            <button onClick={() => handleNavClick(ContentType.SPECIAL)} className={`text-xs font-bold transition-colors ${activeCategory === ContentType.SPECIAL ? 'text-blue-600 underline underline-offset-4 decoration-2' : 'text-slate-500 hover:text-blue-600'}`}>SPECIALS</button>
           </div>
 
-          <a href="https://t.me/doraemon_ever_tamil" target="_blank" className="bg-[#229ED9] text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#1e88ba] transition-all shadow-md flex items-center gap-2">
-            <i className="fa-brands fa-telegram"></i>
-            <span className="hidden sm:inline">Join Telegram</span>
-          </a>
+          <div className="flex items-center gap-3">
+            {user ? (
+              <div className="flex items-center gap-3">
+                <div className="hidden sm:flex flex-col items-end">
+                  <span className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{user.username}</span>
+                  <span className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">
+                    {user.role === UserRole.USER ? `SEARCHES: ${searchCount}/${SEARCH_LIMIT}` : 'ADMIN ACCESS'}
+                  </span>
+                </div>
+                {user.role === UserRole.ADMIN && (
+                  <button onClick={() => setShowAdmin(true)} className="p-2.5 bg-slate-900 text-white rounded-xl text-xs hover:bg-slate-800 transition-all shadow-md">
+                    <i className="fa-solid fa-plus"></i>
+                  </button>
+                )}
+                <button onClick={handleLogout} className="p-2.5 bg-red-50 text-red-600 rounded-xl text-xs hover:bg-red-100 transition-all">
+                  <i className="fa-solid fa-power-off"></i>
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={() => setShowLogin(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-blue-700 transition-all border border-blue-600 shadow-md flex items-center gap-2"
+              >
+                <i className="fa-solid fa-user-circle"></i>
+                <span>LOGIN</span>
+              </button>
+            )}
+            <a href="https://t.me/doraemon_ever_tamil" target="_blank" className="bg-[#229ED9] text-white p-2.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold hover:bg-[#1e88ba] transition-all shadow-md flex items-center gap-2">
+              <i className="fa-brands fa-telegram"></i>
+              <span className="hidden sm:inline">JOIN</span>
+            </a>
+          </div>
         </div>
       </header>
 
@@ -234,14 +326,51 @@ const App: React.FC = () => {
           <div className="max-w-4xl mx-auto text-center px-4">
             {!isShowingList && (
               <div className="animate-in fade-in slide-in-from-top-4 duration-1000">
-                <div className="inline-block px-4 py-1.5 mb-6 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest shadow-sm">Powered by DET</div>
+                <div className="inline-block px-4 py-1.5 mb-6 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest shadow-sm">Powered by DET & Gemini AI</div>
                 <h2 className="text-4xl sm:text-6xl font-extrabold text-slate-900 mb-6 leading-tight tracking-tight">Find Your Favorite <br /> <span className="text-blue-600">Doraemon</span> Moment.</h2>
                 <p className="text-base sm:text-lg text-slate-500 mb-10 max-w-xl mx-auto leading-relaxed">Search episodes, movies, and specials in Tamil. <br className="hidden sm:block" /> Describe the story and our AI finds the link.</p>
               </div>
             )}
-            <SearchBox onSearch={handleSearch} isLoading={isLoading} setIsLoading={setIsLoading} activeCategory={activeCategory} />
+            
+            {!user ? (
+              <div className="bg-white p-10 rounded-[2.5rem] border-2 border-blue-100 shadow-2xl max-w-lg mx-auto animate-in zoom-in-95 duration-300">
+                <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center text-blue-600 text-4xl mx-auto mb-6 shadow-inner">
+                  <i className="fa-solid fa-lock"></i>
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Login Required</h3>
+                <p className="text-slate-500 text-sm mb-8 leading-relaxed">
+                  Join our community to access the AI Search Engine. 
+                  <br />
+                  <b>Standard users get 5 free searches every day!</b>
+                </p>
+                <button 
+                  onClick={() => setShowLogin(true)} 
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-blue-200 transition-all active:scale-[0.98]"
+                >
+                  Unlock AI Finder
+                </button>
+              </div>
+            ) : isLimitReached ? (
+              <div className="bg-white p-10 rounded-[2.5rem] border-2 border-red-100 shadow-2xl max-w-lg mx-auto animate-in zoom-in-95 duration-300">
+                <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center text-red-600 text-4xl mx-auto mb-6 shadow-inner">
+                  <i className="fa-solid fa-hourglass-end"></i>
+                </div>
+                <h3 className="text-2xl font-black text-red-600 uppercase tracking-tight mb-2">Daily Limit Reached</h3>
+                <p className="text-slate-500 text-sm mb-8 leading-relaxed">
+                  You've reached your <b>{SEARCH_LIMIT} free searches</b> for today. 
+                  Come back tomorrow or explore our Telegram channel for more adventures!
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <a href="https://t.me/doraemon_ever_tamil" target="_blank" className="flex-grow bg-[#229ED9] text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-center shadow-lg shadow-blue-100">Telegram</a>
+                  <button onClick={handleLogout} className="flex-grow bg-slate-100 text-slate-600 py-4 rounded-2xl font-black text-sm uppercase tracking-widest">Logout</button>
+                </div>
+              </div>
+            ) : (
+              <SearchBox onSearch={handleSearch} isLoading={isLoading} setIsLoading={setIsLoading} activeCategory={activeCategory} customDataset={customDataset} />
+            )}
+            
             {searchResults?.didYouMean && (
-              <p className="mt-4 text-sm text-blue-500 italic">Did you mean: <button onClick={() => handleSearch({matches: dataset.filter(d => d.title.toLowerCase().includes(searchResults.didYouMean!.toLowerCase())), isLowConfidence: true}, searchResults.didYouMean!)} className="font-bold underline hover:text-blue-700">{searchResults.didYouMean}</button>?</p>
+              <p className="mt-4 text-sm text-blue-500 italic">Did you mean: <button onClick={() => handleSearch({matches: combinedDataset.filter(d => d.title.toLowerCase().includes(searchResults.didYouMean!.toLowerCase())), isLowConfidence: true}, searchResults.didYouMean!)} className="font-bold underline hover:text-blue-700">{searchResults.didYouMean}</button>?</p>
             )}
           </div>
         </section>
