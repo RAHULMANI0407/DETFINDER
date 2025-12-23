@@ -79,8 +79,8 @@ export const dataset: ContentItem[] = [
     language: Language.TAMIL,
     keywords: ["winged braves", "birds", "flying", "adventure", "fantasy"],
     telegram_link: "https://t.me/doraemon_ever_tamil/3",
-    imdbRating: "6.7",
-    image: "https://images.unsplash.com/photo-1444464666168-49d633b867ad?auto=format&fit=crop&q=80&w=600"
+    imdbRating: "6.9",
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766225033/Gemini_Generated_Image_v15pdcv15pdcv15p_lhgjly.png"
   },
   {
     id: 'm-drifts-universe',
@@ -90,8 +90,8 @@ export const dataset: ContentItem[] = [
     language: Language.TAMIL,
     keywords: ["universe", "space", "aliens", "spaceship", "galaxy"],
     telegram_link: "https://t.me/doraemon_ever_tamil/4",
-    imdbRating: "6.9",
-    image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=600"
+    imdbRating: "6.6",
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766225216/Gemini_Generated_Image_6i5mdi6i5mdi6i5m_aorwjt.png"
   },
   {
     id: 'm-underworld',
@@ -101,8 +101,8 @@ export const dataset: ContentItem[] = [
     language: Language.TAMIL,
     keywords: ["underworld", "magic", "demons", "wizardry", "fantasy", "spell"],
     telegram_link: "https://t.me/doraemon_ever_tamil/5",
-    imdbRating: "7.0",
-    image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=600"
+    imdbRating: "7.2",
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766225196/download_egzomn.jpg"
   },
   {
     id: 'm-space-heroes',
@@ -112,8 +112,8 @@ export const dataset: ContentItem[] = [
     language: Language.TAMIL,
     keywords: ["space heroes", "superhero", "pirates", "planets", "action"],
     telegram_link: "https://t.me/doraemon_ever_tamil/6",
-    imdbRating: "6.5",
-    image: "https://images.unsplash.com/photo-1614728263952-84ea256f9679?auto=format&fit=crop&q=80&w=600"
+    imdbRating: "6.6",
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766225264/download_1_tz0kv5.jpg"
   },
   {
     id: 'm-green-giant',
@@ -123,8 +123,8 @@ export const dataset: ContentItem[] = [
     language: Language.TAMIL,
     keywords: ["green giant", "nature", "kibo", "plants", "forest", "eco"],
     telegram_link: "https://t.me/doraemon_ever_tamil/8",
-    imdbRating: "6.3",
-    image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=600"
+    imdbRating: "6.6",
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766225331/download_2_gotqhk.jpg"
   },
   {
     id: 'm-animal-planet',
@@ -134,8 +134,8 @@ export const dataset: ContentItem[] = [
     language: Language.TAMIL,
     keywords: ["animal planet", "animals", "environment", "talking animals"],
     telegram_link: "https://t.me/doraemon_ever_tamil/9",
-    imdbRating: "7.2",
-    image: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&q=80&w=600"
+    imdbRating: "6.8",
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766225402/download_3_raqhir.jpg"
   },
   {
     id: 'm-kingdom-clouds',
@@ -159,8 +159,8 @@ export const dataset: ContentItem[] = [
       "sky people"
     ],
     telegram_link: "https://t.me/doraemon_ever_tamil/10",
-    imdbRating: "7.5",
-    image: "https://images.unsplash.com/photo-1534067783941-51c9c23ecefd?auto=format&fit=crop&q=80&w=600"
+    imdbRating: "7.1",
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766225467/images_yrff1l.jpg"
   },
   {
     id: 'm-birth-japan',
@@ -171,7 +171,7 @@ export const dataset: ContentItem[] = [
     keywords: ["birth of japan", "prehistoric", "past", "primitive", "stone age"],
     telegram_link: "https://t.me/doraemon_ever_tamil/11",
     imdbRating: "6.8",
-    image: "https://images.unsplash.com/photo-1518155317743-a8ff43ea6f5f?auto=format&fit=crop&q=80&w=600"
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766225511/download_4_c9blqm.jpg"
   },
   {
     id: 'm-star-war',
@@ -181,8 +181,8 @@ export const dataset: ContentItem[] = [
     language: Language.TAMIL,
     keywords: ["star war", "tiny", "shrunken", "aliens", "papi", "rebellion"],
     telegram_link: "https://t.me/doraemon_ever_tamil/12",
-    imdbRating: "7.0",
-    image: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&q=80&w=600"
+    imdbRating: "7.3",
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766225568/download_5_nllqlh.jpg"
   },
   {
     id: 'm-dinosaur',
@@ -193,7 +193,7 @@ export const dataset: ContentItem[] = [
     keywords: ["dinosaur", "pisuke", "egg", "cretaceous", "prehistoric"],
     telegram_link: "https://t.me/doraemon_ever_tamil/13",
     imdbRating: "7.3",
-    image: "https://images.unsplash.com/photo-1525857597365-5f6dbff2e36e?auto=format&fit=crop&q=80&w=600"
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766225629/download_6_etn6nx.jpg"
   },
   {
     id: 'm-mermaid',
@@ -203,8 +203,8 @@ export const dataset: ContentItem[] = [
     language: Language.TAMIL,
     keywords: ["mermaid", "underwater", "ocean", "sea", "merfolk"],
     telegram_link: "https://t.me/doraemon_ever_tamil/14",
-    imdbRating: "6.4",
-    image: "https://images.unsplash.com/photo-1582967788606-a171c1080cb0?auto=format&fit=crop&q=80&w=600"
+    imdbRating: "6.5",
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766225687/a966ed07df884549d052e60bfd38c34ffc3f895e34faeb12d6b9890d9b4ad722._SX1080_FMpng__ekab3n.png"
   },
   {
     id: 'm-tin-labyrinth',
@@ -214,8 +214,8 @@ export const dataset: ContentItem[] = [
     language: Language.TAMIL,
     keywords: ["tin labyrinth", "robots", "hotel", "maze", "machines"],
     telegram_link: "https://t.me/doraemon_ever_tamil/15",
-    imdbRating: "7.2",
-    image: "https://images.unsplash.com/photo-1504333638930-c8787321eee0?auto=format&fit=crop&q=80&w=600"
+    imdbRating: "7.1",
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766225751/download_7_wrkk0v.jpg"
   },
   {
     id: 'm-creation-world',
@@ -225,8 +225,8 @@ export const dataset: ContentItem[] = [
     language: Language.TAMIL,
     keywords: ["creation", "world", "miniature", "universe", "evolution"],
     telegram_link: "https://t.me/doraemon_ever_tamil/17",
-    imdbRating: "7.0",
-    image: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&q=80&w=600"
+    imdbRating: "6.8",
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766225818/images_1_ik9lcs.jpg"
   },
   {
     id: 'm-island-miracles',
