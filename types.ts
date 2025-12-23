@@ -11,6 +11,18 @@ export enum Language {
   NOT_IN_TAMIL = 'Not in Tamil'
 }
 
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  USER = 'USER',
+  GUEST = 'GUEST'
+}
+
+export interface User {
+  id: string;
+  username: string;
+  role: UserRole;
+}
+
 export interface ContentItem {
   id: string;
   type: ContentType;
@@ -36,4 +48,5 @@ export interface SearchResult {
   isLowConfidence?: boolean;
   isVagueQuery?: boolean;
   intentType?: string;
+  status?: 'ok' | 'limit_reached';
 }
