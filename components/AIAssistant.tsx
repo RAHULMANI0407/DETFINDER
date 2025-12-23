@@ -65,10 +65,10 @@ export const AIAssistant: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[60] flex flex-col items-end">
+    <div className="fixed bottom-[100px] md:bottom-6 right-6 z-[60] flex flex-col items-end">
       {/* Chat Window */}
       {isOpen && (
-        <div className="mb-4 w-[90vw] sm:w-[380px] h-[500px] bg-white/90 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-blue-100 overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-8 duration-300">
+        <div className="mb-4 w-[90vw] sm:w-[380px] h-[500px] bg-white/95 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-blue-100 overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-8 duration-300">
           {/* Header */}
           <div className="bg-blue-600 p-5 text-white flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -138,7 +138,7 @@ export const AIAssistant: React.FC = () => {
       {/* Floating Button */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl shadow-2xl transition-all hover:scale-110 active:scale-90 ${
+        className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-white text-xl md:text-2xl shadow-2xl transition-all hover:scale-110 active:scale-90 ${
           isOpen ? 'bg-slate-900 rotate-45' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-300/50'
         }`}
       >
