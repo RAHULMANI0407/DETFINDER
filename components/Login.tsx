@@ -17,7 +17,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onClose }) => {
     setError('');
 
     // Admin-only check
-    if (username === 'admin' && password === 'admin123') {
+    if (username === 'rahuldet' && password === 'rahuldet24') {
       onLogin({ id: 'admin-1', username: 'Admin', role: UserRole.ADMIN });
       return;
     }
