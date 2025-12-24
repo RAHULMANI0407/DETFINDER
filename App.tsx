@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { dataset as initialDataset } from './data/dataset';
 import { SearchBox } from './components/SearchBox';
@@ -8,6 +7,9 @@ import { AIAssistant } from './components/AIAssistant';
 import { Login } from './components/Login';
 import { AdminDashboard } from './components/AdminDashboard';
 import { ContentType, SearchResult, User, UserRole, ContentItem } from './types';
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "./lib/firebase";
+
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -24,17 +26,31 @@ const App: React.FC = () => {
 
   // Load persistent user and custom data on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('det_user');
-    if (storedUser) setUser(JSON.parse(storedUser));
+  const storedUser = localStorage.getItem('det_user');
+  if (storedUser) setUser(JSON.parse(storedUser));
 
-    const storedCustom = localStorage.getItem('det_custom_data');
-    if (storedCustom) setCustomDataset(JSON.parse(storedCustom));
+  const loadContentFromFirestore = async () => {
+    try {
+      const snapshot = await getDocs(collection(db, "content"));
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as ContentItem[];
 
-    const timer = setTimeout(() => {
-      setShowFollowPopup(true);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
+      setCustomDataset(data);
+    } catch (error) {
+      console.error("Failed to load content", error);
+    }
+  };
+
+  loadContentFromFirestore();
+
+  const timer = setTimeout(() => {
+    setShowFollowPopup(true);
+  }, 2000);
+
+  return () => clearTimeout(timer);
+}, []);
 
   const combinedDataset = useMemo(() => [...initialDataset, ...customDataset], [customDataset]);
 
