@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { dataset as initialDataset } from './data/dataset';
 import { SearchBox } from './components/SearchBox';
@@ -7,8 +8,6 @@ import { AIAssistant } from './components/AIAssistant';
 import { Login } from './components/Login';
 import { AdminDashboard } from './components/AdminDashboard';
 import { ContentType, SearchResult, User, UserRole, ContentItem } from './types';
-
-const SEARCH_LIMIT = 3;
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -22,29 +21,14 @@ const App: React.FC = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [currentQuery, setCurrentQuery] = useState('');
   const [showFollowPopup, setShowFollowPopup] = useState(false);
-  const [searchCount, setSearchCount] = useState(0);
 
-  // Initialize search count and custom data from local storage
+  // Load persistent user and custom data on mount
   useEffect(() => {
     const storedUser = localStorage.getItem('det_user');
     if (storedUser) setUser(JSON.parse(storedUser));
 
     const storedCustom = localStorage.getItem('det_custom_data');
     if (storedCustom) setCustomDataset(JSON.parse(storedCustom));
-
-    const today = new Date().toDateString();
-    const storedSearchData = localStorage.getItem('det_search_limit');
-    if (storedSearchData) {
-      const { count, date } = JSON.parse(storedSearchData);
-      if (date === today) {
-        setSearchCount(count);
-      } else {
-        localStorage.setItem('det_search_limit', JSON.stringify({ count: 0, date: today }));
-        setSearchCount(0);
-      }
-    } else {
-      localStorage.setItem('det_search_limit', JSON.stringify({ count: 0, date: today }));
-    }
 
     const timer = setTimeout(() => {
       setShowFollowPopup(true);
@@ -73,20 +57,6 @@ const App: React.FC = () => {
   };
 
   const handleSearch = (results: SearchResult, query: string) => {
-    // Security check: ensure user exists
-    if (!user) {
-      setShowLogin(true);
-      return;
-    }
-
-    // If user role is USER, increment and check limit
-    if (user.role === UserRole.USER) {
-      const today = new Date().toDateString();
-      const newCount = searchCount + 1;
-      setSearchCount(newCount);
-      localStorage.setItem('det_search_limit', JSON.stringify({ count: newCount, date: today }));
-    }
-
     setIsTransitioning(true);
     setTimeout(() => {
       setSearchResults(results);
@@ -100,8 +70,6 @@ const App: React.FC = () => {
       }, 100);
     }, 300);
   };
-
-  const isLimitReached = user?.role === UserRole.USER && searchCount >= SEARCH_LIMIT;
 
   const isShowingList = searchResults !== null || activeCategory !== 'All';
 
@@ -204,7 +172,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-[#f8fafc] pb-[80px] md:pb-0">
       <FollowPopup isVisible={showFollowPopup} onClose={() => setShowFollowPopup(false)} />
-      <AIAssistant />
+      < AIAssistant />
       
       {showLogin && <Login onLogin={handleLogin} onClose={() => setShowLogin(false)} />}
       {showAdmin && <AdminDashboard onAddItem={handleAddItem} onClose={() => setShowAdmin(false)} />}
@@ -236,15 +204,11 @@ const App: React.FC = () => {
               <div className="flex items-center gap-3">
                 <div className="hidden sm:flex flex-col items-end">
                   <span className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{user.username}</span>
-                  <span className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">
-                    {user.role === UserRole.USER ? `SEARCHES: ${searchCount}/${SEARCH_LIMIT}` : 'ADMIN ACCESS'}
-                  </span>
+                  <span className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">ADMIN ACCESS</span>
                 </div>
-                {user.role === UserRole.ADMIN && (
-                  <button onClick={() => setShowAdmin(true)} className="p-2.5 bg-slate-900 text-white rounded-xl text-xs hover:bg-slate-800 transition-all shadow-md">
-                    <i className="fa-solid fa-plus"></i>
-                  </button>
-                )}
+                <button onClick={() => setShowAdmin(true)} className="p-2.5 bg-slate-900 text-white rounded-xl text-xs hover:bg-slate-800 transition-all shadow-md">
+                  <i className="fa-solid fa-plus"></i>
+                </button>
                 <button onClick={handleLogout} className="p-2.5 bg-red-50 text-red-600 rounded-xl text-xs hover:bg-red-100 transition-all">
                   <i className="fa-solid fa-power-off"></i>
                 </button>
@@ -252,10 +216,10 @@ const App: React.FC = () => {
             ) : (
               <button 
                 onClick={() => setShowLogin(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-blue-700 transition-all border border-blue-600 shadow-md flex items-center gap-2"
+                className="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-slate-800 transition-all shadow-md flex items-center gap-2"
               >
-                <i className="fa-solid fa-user-circle"></i>
-                <span>LOGIN</span>
+                <i className="fa-solid fa-lock"></i>
+                <span>ADMIN</span>
               </button>
             )}
             <a href="https://t.me/doraemon_ever_tamil" target="_blank" className="bg-[#229ED9] text-white p-2.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold hover:bg-[#1e88ba] transition-all shadow-md flex items-center gap-2">
@@ -266,48 +230,21 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {/* Persistent Bottom Navigation for Mobile Devices */}
+      {/* Persistent Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-[55] bg-white/95 backdrop-blur-md border-t border-blue-100 flex items-center justify-around pt-3 pb-6 px-4 md:hidden shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
-        <button 
-          onClick={() => handleNavClick('All')} 
-          className={`flex flex-col items-center gap-1.5 transition-all ${activeCategory === 'All' && !searchResults ? 'text-blue-600' : 'text-slate-400'}`}
-        >
-          <div className={`p-2 rounded-xl transition-colors ${activeCategory === 'All' && !searchResults ? 'bg-blue-50' : ''}`}>
-            <i className="fa-solid fa-house text-xl"></i>
-          </div>
+        <button onClick={() => handleNavClick('All')} className={`flex flex-col items-center gap-1.5 transition-all ${activeCategory === 'All' && !searchResults ? 'text-blue-600' : 'text-slate-400'}`}>
+          <div className={`p-2 rounded-xl transition-colors ${activeCategory === 'All' && !searchResults ? 'bg-blue-50' : ''}`}><i className="fa-solid fa-house text-xl"></i></div>
           <span className="text-[10px] font-extrabold uppercase tracking-tight">Home</span>
         </button>
-        <button 
-          onClick={() => handleNavClick(ContentType.MOVIE)} 
-          className={`flex flex-col items-center gap-1.5 transition-all ${activeCategory === ContentType.MOVIE ? 'text-blue-600' : 'text-slate-400'}`}
-        >
-          <div className={`p-2 rounded-xl transition-colors ${activeCategory === ContentType.MOVIE ? 'bg-blue-50' : ''}`}>
-            <i className="fa-solid fa-film text-xl"></i>
-          </div>
+        <button onClick={() => handleNavClick(ContentType.MOVIE)} className={`flex flex-col items-center gap-1.5 transition-all ${activeCategory === ContentType.MOVIE ? 'text-blue-600' : 'text-slate-400'}`}>
+          <div className={`p-2 rounded-xl transition-colors ${activeCategory === ContentType.MOVIE ? 'bg-blue-50' : ''}`}><i className="fa-solid fa-film text-xl"></i></div>
           <span className="text-[10px] font-extrabold uppercase tracking-tight">Movies</span>
         </button>
-        <button 
-          onClick={() => handleNavClick(ContentType.EPISODE)} 
-          className={`flex flex-col items-center gap-1.5 transition-all ${activeCategory === ContentType.EPISODE ? 'text-blue-600' : 'text-slate-400'}`}
-        >
-          <div className={`p-2 rounded-xl transition-colors ${activeCategory === ContentType.EPISODE ? 'bg-blue-50' : ''}`}>
-            <i className="fa-solid fa-tv text-xl"></i>
-          </div>
+        <button onClick={() => handleNavClick(ContentType.EPISODE)} className={`flex flex-col items-center gap-1.5 transition-all ${activeCategory === ContentType.EPISODE ? 'text-blue-600' : 'text-slate-400'}`}>
+          <div className={`p-2 rounded-xl transition-colors ${activeCategory === ContentType.EPISODE ? 'bg-blue-50' : ''}`}><i className="fa-solid fa-tv text-xl"></i></div>
           <span className="text-[10px] font-extrabold uppercase tracking-tight">Episodes</span>
         </button>
-        <button 
-          onClick={() => handleNavClick(ContentType.SPECIAL)} 
-          className={`flex flex-col items-center gap-1.5 transition-all ${activeCategory === ContentType.SPECIAL ? 'text-blue-600' : 'text-slate-400'}`}
-        >
-          <div className={`p-2 rounded-xl transition-colors ${activeCategory === ContentType.SPECIAL ? 'bg-blue-50' : ''}`}>
-            <i className="fa-solid fa-star text-xl"></i>
-          </div>
-          <span className="text-[10px] font-extrabold uppercase tracking-tight">Specials</span>
-        </button>
-        <button 
-          onClick={scrollToSearch} 
-          className="flex flex-col items-center gap-1.5 text-blue-600 group active:scale-95 transition-transform"
-        >
+        <button onClick={scrollToSearch} className="flex flex-col items-center gap-1.5 text-blue-600 group active:scale-95 transition-transform">
           <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center -translate-y-6 shadow-xl shadow-blue-300 ring-4 ring-white">
             <i className="fa-solid fa-magnifying-glass text-lg"></i>
           </div>
@@ -325,48 +262,13 @@ const App: React.FC = () => {
           <div className="max-w-4xl mx-auto text-center px-4">
             {!isShowingList && (
               <div className="animate-in fade-in slide-in-from-top-4 duration-1000">
-                <div className="inline-block px-4 py-1.5 mb-6 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest shadow-sm">Powered by DET </div>
+                <div className="inline-block px-4 py-1.5 mb-6 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest shadow-sm">Powered by DET & Gemini AI</div>
                 <h2 className="text-4xl sm:text-6xl font-extrabold text-slate-900 mb-6 leading-tight tracking-tight">Find Your Favorite <br /> <span className="text-blue-600">Doraemon</span> Moment.</h2>
                 <p className="text-base sm:text-lg text-slate-500 mb-10 max-w-xl mx-auto leading-relaxed">Search episodes, movies, and specials in Tamil. <br className="hidden sm:block" /> Describe the story and our AI finds the link.</p>
               </div>
             )}
             
-            {!user ? (
-              <div className="bg-white p-10 rounded-[2.5rem] border-2 border-blue-100 shadow-2xl max-w-lg mx-auto animate-in zoom-in-95 duration-300">
-                <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center text-blue-600 text-4xl mx-auto mb-6 shadow-inner">
-                  <i className="fa-solid fa-lock"></i>
-                </div>
-                <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Login Required</h3>
-                <p className="text-slate-500 text-sm mb-8 leading-relaxed">
-                  Join our community to access the AI Search Engine. 
-                  <br />
-                  <b>Standard users get 5 free searches every day!</b>
-                </p>
-                <button 
-                  onClick={() => setShowLogin(true)} 
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-blue-200 transition-all active:scale-[0.98]"
-                >
-                  Unlock AI Finder
-                </button>
-              </div>
-            ) : isLimitReached ? (
-              <div className="bg-white p-10 rounded-[2.5rem] border-2 border-red-100 shadow-2xl max-w-lg mx-auto animate-in zoom-in-95 duration-300">
-                <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center text-red-600 text-4xl mx-auto mb-6 shadow-inner">
-                  <i className="fa-solid fa-hourglass-end"></i>
-                </div>
-                <h3 className="text-2xl font-black text-red-600 uppercase tracking-tight mb-2">Daily Limit Reached</h3>
-                <p className="text-slate-500 text-sm mb-8 leading-relaxed">
-                  You've reached your <b>{SEARCH_LIMIT} free searches</b> for today. 
-                  Come back tomorrow or explore our Telegram channel for more adventures!
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <a href="https://t.me/doraemon_ever_tamil" target="_blank" className="flex-grow bg-[#229ED9] text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-center shadow-lg shadow-blue-100">Telegram</a>
-                  <button onClick={handleLogout} className="flex-grow bg-slate-100 text-slate-600 py-4 rounded-2xl font-black text-sm uppercase tracking-widest">Logout</button>
-                </div>
-              </div>
-            ) : (
-              <SearchBox onSearch={handleSearch} isLoading={isLoading} setIsLoading={setIsLoading} activeCategory={activeCategory} customDataset={customDataset} />
-            )}
+            <SearchBox onSearch={handleSearch} isLoading={isLoading} setIsLoading={setIsLoading} activeCategory={activeCategory} customDataset={customDataset} />
             
             {searchResults?.didYouMean && (
               <p className="mt-4 text-sm text-blue-500 italic">Did you mean: <button onClick={() => handleSearch({matches: combinedDataset.filter(d => d.title.toLowerCase().includes(searchResults.didYouMean!.toLowerCase())), isLowConfidence: true}, searchResults.didYouMean!)} className="font-bold underline hover:text-blue-700">{searchResults.didYouMean}</button>?</p>
@@ -395,18 +297,13 @@ const App: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-1 gap-6 max-w-4xl mx-auto">
                   {bestMatches.map(item => (
-                    <ResultCard 
-                      key={item.id} 
-                      item={item} 
-                      searchReasoning={searchResults?.reasoningMap?.[item.id]} 
-                      matchType={searchResults?.matchTypeMap?.[item.id]} 
-                    />
+                    <ResultCard key={item.id} item={item} searchReasoning={searchResults?.reasoningMap?.[item.id]} matchType={searchResults?.matchTypeMap?.[item.id]} />
                   ))}
                 </div>
               </div>
             )}
 
-            {/* RELATED RESULTS: Other search content */}
+            {/* RELATED RESULTS */}
             {relatedMatches.length > 0 && (
               <div>
                 <div className="flex items-center gap-3 mb-6">
@@ -418,12 +315,7 @@ const App: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {relatedMatches.map(item => (
-                    <ResultCard 
-                      key={item.id} 
-                      item={item} 
-                      searchReasoning={searchResults?.reasoningMap?.[item.id]} 
-                      matchType={searchResults?.matchTypeMap?.[item.id]} 
-                    />
+                    <ResultCard key={item.id} item={item} searchReasoning={searchResults?.reasoningMap?.[item.id]} matchType={searchResults?.matchTypeMap?.[item.id]} />
                   ))}
                 </div>
               </div>
@@ -443,22 +335,15 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Footer Navigation Section */}
       <footer className="bg-slate-900 text-white pt-16 pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-12 mb-16 text-center sm:text-left">
             <div>
               <div className="flex items-center justify-center sm:justify-start gap-2 mb-6">
-                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white text-lg shadow-lg">
-                  <i className="fa-solid fa-robot"></i>
-                </div>
-                <h1 className="text-xl font-black tracking-tighter uppercase">
-                  DET<span className="text-white/70">FINDER</span>
-                </h1>
+                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white text-lg shadow-lg"><i className="fa-solid fa-robot"></i></div>
+                <h1 className="text-xl font-black tracking-tighter uppercase">DET<span className="text-white/70">FINDER</span></h1>
               </div>
-              <p className="text-slate-400 text-sm leading-relaxed mb-6">
-                Your future pocket assistant for everything Doraemon. Find your favorite moments, movies, and episodes in Tamil instantly.
-              </p>
+              <p className="text-slate-400 text-sm leading-relaxed mb-6">Your future pocket assistant for everything Doraemon. Find your favorite moments, movies, and episodes in Tamil instantly.</p>
             </div>
             
             <div className="flex flex-col gap-4">
@@ -466,35 +351,19 @@ const App: React.FC = () => {
               <button onClick={() => handleNavClick('All')} className="text-slate-400 hover:text-white transition-colors text-sm font-bold">Movie Finder</button>
               <button onClick={() => handleNavClick(ContentType.MOVIE)} className="text-slate-400 hover:text-white transition-colors text-sm font-bold">Movies</button>
               <button onClick={() => handleNavClick(ContentType.EPISODE)} className="text-slate-400 hover:text-white transition-colors text-sm font-bold">Episodes</button>
-              <button onClick={() => handleNavClick(ContentType.SPECIAL)} className="text-slate-400 hover:text-white transition-colors text-sm font-bold">Specials</button>
               <button onClick={scrollToSearch} className="text-blue-400 hover:text-blue-300 transition-colors text-sm font-black italic">AI Finder</button>
             </div>
 
             <div className="flex flex-col gap-4">
               <h4 className="text-xs font-black uppercase tracking-[0.3em] text-blue-400 mb-2">Connect</h4>
-              <a href="https://t.me/doraemon_ever_tamil" target="_blank" className="flex items-center justify-center sm:justify-start gap-3 text-slate-400 hover:text-[#229ED9] transition-colors text-sm font-bold">
-                <i className="fa-brands fa-telegram text-xl"></i> Telegram Channel
-              </a>
-              <a href="https://www.instagram.com/doraemon_ever_tamil/" target="_blank" className="flex items-center justify-center sm:justify-start gap-3 text-slate-400 hover:text-pink-400 transition-colors text-sm font-bold">
-                <i className="fa-brands fa-instagram text-xl"></i> Instagram Feed
-              </a>
+              <a href="https://t.me/doraemon_ever_tamil" target="_blank" className="flex items-center justify-center sm:justify-start gap-3 text-slate-400 hover:text-[#229ED9] transition-colors text-sm font-bold"><i className="fa-brands fa-telegram text-xl"></i> Telegram Channel</a>
+              <a href="https://www.instagram.com/doraemon_ever_tamil/" target="_blank" className="flex items-center justify-center sm:justify-start gap-3 text-slate-400 hover:text-pink-400 transition-colors text-sm font-bold"><i className="fa-brands fa-instagram text-xl"></i> Instagram Feed</a>
             </div>
           </div>
 
           <div className="pt-8 border-t border-slate-800 text-center">
-            <p className="text-slate-500 text-[10px] font-bold tracking-[0.2em] uppercase mb-4">
-              Crafted for Doraemon Fans in Tamil • Powered by DET
-            </p>
-            <p className="text-slate-600 text-[10px] font-medium tracking-wide mb-6">
-              &copy; {new Date().getFullYear()} DET Finder. All rights reserved. 22nd Century Edition.
-            </p>
-            
-            {/* Legal Disclaimer */}
-            <div className="max-w-3xl mx-auto px-4">
-              <p className="text-slate-600 text-[9px] leading-relaxed uppercase tracking-tight font-medium opacity-80">
-                Disclaimer: DET Finder is a fan-made project and is not affiliated with, endorsed by, or connected to Fujiko F. Fujio, Shin-Ei Animation, TV Asahi, or any official Doraemon copyright holders. All images, characters, and content mentioned are the property of their respective owners. This tool is provided for educational and community-finding purposes only.
-              </p>
-            </div>
+            <p className="text-slate-500 text-[10px] font-bold tracking-[0.2em] uppercase mb-4">Crafted for Doraemon Fans in Tamil • Powered by DET</p>
+            <p className="text-slate-600 text-[10px] font-medium tracking-wide mb-6">&copy; {new Date().getFullYear()} DET Finder. All rights reserved.</p>
           </div>
         </div>
       </footer>
