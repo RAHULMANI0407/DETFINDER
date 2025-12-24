@@ -89,7 +89,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, isLoading, setIs
           onChange={handleInputChange}
           onKeyDown={(e) => e.key === 'Enter' && handlePerformSearch(query)}
           placeholder={getPlaceholder()}
-          className="w-full px-5 py-4 pl-12 text-base sm:text-lg bg-white border-2 border-blue-100 rounded-2xl focus:border-blue-500 focus:outline-none shadow-xl transition-all text-black"
+          className="w-full pr-28 pl-12 py-4 pl-12 text-base sm:text-lg bg-white border-2 border-blue-100 rounded-2xl focus:border-blue-500 focus:outline-none shadow-xl transition-all text-black"
           autoComplete="off"
         />
         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400">
