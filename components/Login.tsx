@@ -16,26 +16,25 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onClose }) => {
     e.preventDefault();
     setError('');
 
-    // Mock authentication
-    if (username === 'rahuldet' && password === 'rahuldet24') {
-      onLogin({ id: '1', username: 'Admin', role: UserRole.ADMIN });
-    } else if (username === 'testing' && password === 'det1') {
-      onLogin({ id: '2', username: 'User', role: UserRole.USER });
-    } else {
-      setError('Invalid credentials. Hint: admin/admin123 or user/user123');
+    // Admin-only check
+    if (username === 'admin' && password === 'admin123') {
+      onLogin({ id: 'admin-1', username: 'Admin', role: UserRole.ADMIN });
+      return;
     }
+
+    setError('Invalid Administrator credentials.');
   };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
       <div className="bg-white w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
-        <div className="bg-blue-600 p-10 text-center relative overflow-hidden">
+        <div className="bg-slate-900 p-10 text-center relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
-          <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center text-blue-600 text-4xl mx-auto mb-4 shadow-xl">
-            <i className="fa-solid fa-user-lock"></i>
+          <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center text-slate-900 text-4xl mx-auto mb-4 shadow-xl">
+            <i className="fa-solid fa-shield-halved"></i>
           </div>
-          <h2 className="text-2xl font-black text-white uppercase tracking-tight">Access Gate</h2>
-          <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mt-1">Doraemon Ever Tamil</p>
+          <h2 className="text-2xl font-black text-white uppercase tracking-tight">Admin Gate</h2>
+          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Authorized Personnel Only</p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-10 space-y-6">
@@ -54,8 +53,8 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onClose }) => {
                 type="text" 
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 focus:ring-4 focus:ring-blue-50 focus:border-blue-300 transition-all text-sm outline-none"
-                placeholder="Enter username"
+                className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 focus:ring-4 focus:ring-slate-100 focus:border-slate-300 transition-all text-sm outline-none"
+                placeholder="Enter admin username"
                 required
               />
             </div>
@@ -69,8 +68,8 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onClose }) => {
                 type="password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 focus:ring-4 focus:ring-blue-50 focus:border-blue-300 transition-all text-sm outline-none"
-                placeholder="Enter password"
+                className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 focus:ring-4 focus:ring-slate-100 focus:border-slate-300 transition-all text-sm outline-none"
+                placeholder="Enter admin password"
                 required
               />
             </div>
@@ -78,9 +77,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onClose }) => {
 
           <button 
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-blue-200 transition-all active:scale-[0.98]"
+            className="w-full bg-slate-900 hover:bg-black text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-slate-200 transition-all active:scale-[0.98]"
           >
-            Authenticate
+            Log In to Admin
           </button>
 
           <button 
