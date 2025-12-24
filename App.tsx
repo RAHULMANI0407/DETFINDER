@@ -383,7 +383,7 @@ const App: React.FC = () => {
               <a href="https://www.instagram.com/doraemon_ever_tamil/" target="_blank" className="flex items-center justify-center sm:justify-start gap-3 text-slate-400 hover:text-pink-400 transition-colors text-sm font-bold"><i className="fa-brands fa-instagram text-xl"></i> Instagram Feed</a>
             </div>
           </div>
-          <p className="text-slate-600 text-[32px] leading-relaxed mt-4 max-w-3xl mx-auto">
+          <p className="text-slate-600 text-[18px] leading-relaxed mt-4 max-w-3xl mx-auto">
   Disclaimer: DET Finder is a fan-made, non-commercial project.
   Doraemon and related characters are the property of their respective copyright owners.
   This website does not host or stream any content.
