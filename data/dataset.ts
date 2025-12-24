@@ -12,7 +12,7 @@ export const dataset: ContentItem[] = [
     language: Language.TAMIL,
     keywords: ["season 14", "classic", "episodes", "daily life", "gadgets"],
     telegram_link: "https://t.me/Doraemonevrtamilepisode/36",
-    image: "https://images.unsplash.com/photo-1618519764620-7403abdbdfe9?auto=format&fit=crop&q=80&w=600"
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766566977/download_8_qn8hwr.jpg"
   },
   {
     id: 'ep-s15',
@@ -23,7 +23,7 @@ export const dataset: ContentItem[] = [
     language: Language.TAMIL,
     keywords: ["season 15", "episodes", "tamil dub", "funny"],
     telegram_link: "https://t.me/Doraemonevrtamilepisode/2",
-    image: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&q=80&w=600"
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766566977/download_8_qn8hwr.jpg"
   },
   {
     id: 'ep-s16',
@@ -34,7 +34,7 @@ export const dataset: ContentItem[] = [
     language: Language.TAMIL,
     keywords: ["season 16", "episodes", "tamil", "school life"],
     telegram_link: "https://t.me/Doraemonevrtamilepisode/90",
-    image: "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&q=80&w=600"
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766566977/download_8_qn8hwr.jpg"
   },
   {
     id: 'ep-s17',
@@ -45,7 +45,7 @@ export const dataset: ContentItem[] = [
     language: Language.TAMIL,
     keywords: ["season 17", "episodes", "new gadgets", "adventures"],
     telegram_link: "https://t.me/Doraemonevrtamilepisode/143",
-    image: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=600"
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766566977/download_8_qn8hwr.jpg"
   },
   {
     id: 'ep-s18',
@@ -56,7 +56,7 @@ export const dataset: ContentItem[] = [
     language: Language.TAMIL,
     keywords: ["season 18", "episodes", "latest", "tamil dubbed"],
     telegram_link: "https://t.me/Doraemonevrtamilepisode/233",
-    image: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&q=80&w=600"
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766566977/download_8_qn8hwr.jpg"
   },
   {
     id: 'ep-s19',
@@ -67,7 +67,7 @@ export const dataset: ContentItem[] = [
     language: Language.TAMIL,
     keywords: ["season 19", "episodes", "modern doraemon"],
     telegram_link: "https://t.me/Doraemonevrtamilepisode/302",
-    image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=600"
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766566977/download_8_qn8hwr.jpg"
   },
 
   // Movies
