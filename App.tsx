@@ -25,25 +25,25 @@ const App: React.FC = () => {
   const [showFollowPopup, setShowFollowPopup] = useState(false);
 
   // Load persistent user and custom data on mount
-  useEffect(() => {
+ useEffect(() => {
   const storedUser = localStorage.getItem('det_user');
   if (storedUser) setUser(JSON.parse(storedUser));
 
-  const loadContentFromFirestore = async () => {
+  // 🔹 Load Firestore content_items
+  const loadFirestoreData = async () => {
     try {
-      const snapshot = await getDocs(collection(db, "content"));
-      const data = snapshot.docs.map(doc => ({
+      const snap = await getDocs(collection(db, "content_items"));
+      const items: ContentItem[] = snap.docs.map(doc => ({
         id: doc.id,
-        ...doc.data(),
-      })) as ContentItem[];
-
-      setCustomDataset(data);
-    } catch (error) {
-      console.error("Failed to load content", error);
+        ...(doc.data() as ContentItem),
+      }));
+      setCustomDataset(items);
+    } catch (err) {
+      console.error("Failed to load Firestore content", err);
     }
   };
 
-  loadContentFromFirestore();
+  loadFirestoreData();
 
   const timer = setTimeout(() => {
     setShowFollowPopup(true);
