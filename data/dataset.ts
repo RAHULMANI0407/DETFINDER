@@ -135,7 +135,7 @@ export const dataset: ContentItem[] = [
     keywords: ["dinosaur", "Cretaceous Period", "Kyu & Myu", "Time Travel", "Fossil Egg"],
     telegram_link: "https://t.me/doraemon_ever_tamil/8",
     imdbRating: "7.1",
-    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766225331/download_2_gotqhk.jpg"
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766569492/images_5_uumrce.jpg"
   },
   {
     id: 'm-green-giant',
