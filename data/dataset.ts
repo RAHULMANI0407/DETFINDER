@@ -119,12 +119,23 @@ export const dataset: ContentItem[] = [
     id: 'm-space-heroes',
     type: ContentType.MOVIE,
     title: "Doraemon: Nobita's Space Heroes",
-    description: "The gang becomes superheroes in space to save a planet from space pirates.",
+    description: "n Doraemon the Movie: Nobita's New Dinosaur (2020), Nobita and his friends travel to the Cretaceous era to return two newly hatched, unknown species of dinosaurs named Kyu and Myu to their proper time before a meteorite collision.",
     language: Language.TAMIL,
-    keywords: ["space heroes", "superhero", "pirates", "planets", "action"],
+    keywords: ["dinosaur", "Cretaceous Period", "Kyu & Myu", "Time Travel", "Fossil Egg"],
     telegram_link: "https://t.me/doraemon_ever_tamil/6",
+    imdbRating: "7.1",
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766569492/images_5_uumrce.jpg"
+  },
+  {
+    id: 'm-new-dinosaur',
+    type: ContentType.MOVIE,
+    title: "Doraemon: Nobita's New Dinosaur",
+    description: "A plant-based creature named Kibo leads the gang into a world of sentient plants.",
+    language: Language.TAMIL,
+    keywords: ["green giant", "nature", "kibo", "plants", "forest", "eco"],
+    telegram_link: "https://t.me/doraemon_ever_tamil/8",
     imdbRating: "6.6",
-    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766225264/download_1_tz0kv5.jpg"
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766225331/download_2_gotqhk.jpg"
   },
   {
     id: 'm-green-giant',
