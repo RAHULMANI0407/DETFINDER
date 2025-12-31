@@ -119,22 +119,22 @@ export const dataset: ContentItem[] = [
     id: 'm-space-heroes',
     type: ContentType.MOVIE,
     title: "Doraemon: Nobita's Space Heroes",
-    description: "n Doraemon the Movie: Nobita's New Dinosaur (2020), Nobita and his friends travel to the Cretaceous era to return two newly hatched, unknown species of dinosaurs named Kyu and Myu to their proper time before a meteorite collision.",
+    description: "In Doraemon: Nobita's Space Heroes, Nobita and his friends film a superhero movie that turns into a real intergalactic rescue mission when an alien asks them to save his planet from space pirates.",
     language: Language.TAMIL,
-    keywords: ["dinosaur", "Cretaceous Period", "Kyu & Myu", "Time Travel", "Fossil Egg"],
-    telegram_link: "https://t.me/doraemon_ever_tamil/6",
-    imdbRating: "7.1",
-    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766569492/images_5_uumrce.jpg"
+      keywords: ["Space", "Heroes", "Galaxy", "Aliens", "Patrol", "Superhero", "Justice", "Adventure", "Friendship", "Courage", "Teamwork", "Gadgets", "Villains", "Battle", "Rescue", "Protection", "Fantasy", "Reality", "Bravery", "Unity"],
+    telegram_link: "https://t.me/doraemon_ever_tamil/147",
+    imdbRating: "6.6",
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766225264/download_1_tz0kv5.jpg"
   },
   {
     id: 'm-new-dinosaur',
     type: ContentType.MOVIE,
     title: "Doraemon: Nobita's New Dinosaur",
-    description: "A plant-based creature named Kibo leads the gang into a world of sentient plants.",
+    description: "n Doraemon the Movie: Nobita's New Dinosaur (2020), Nobita and his friends travel to the Cretaceous era to return two newly hatched, unknown species of dinosaurs named Kyu and Myu to their proper time before a meteorite collision.",
     language: Language.TAMIL,
-    keywords: ["green giant", "nature", "kibo", "plants", "forest", "eco"],
+    keywords: ["dinosaur", "Cretaceous Period", "Kyu & Myu", "Time Travel", "Fossil Egg"],
     telegram_link: "https://t.me/doraemon_ever_tamil/8",
-    imdbRating: "6.6",
+    imdbRating: "7.1",
     image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766225331/download_2_gotqhk.jpg"
   },
   {
