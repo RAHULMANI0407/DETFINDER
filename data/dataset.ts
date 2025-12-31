@@ -3,6 +3,17 @@ import { ContentType, Language, ContentItem } from '../types';
 
 export const dataset: ContentItem[] = [
   // Episodes
+    {
+    id: 'ep-s14',
+    type: ContentType.EPISODE,
+    title: "Doraemon Season 1",
+    season: "Season 1",
+    description: "Full collection of episodes from Season 1. Classic adventures with Nobita and his gadgets.",
+    language: Language.TAMIL,
+    keywords: ["season 1", "classic", "episodes", "daily life", "gadgets"],
+    telegram_link: "https://t.me/Doraemonevrtamilepisode/332",
+    image: "https://res.cloudinary.com/duj55eee1/image/upload/v1766566977/download_8_qn8hwr.jpg"
+  },
   {
     id: 'ep-s14',
     type: ContentType.EPISODE,
