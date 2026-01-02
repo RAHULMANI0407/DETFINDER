@@ -8,70 +8,225 @@ interface MovieRecommenderProps {
   onFindScenes: (movieTitle: string) => void;
 }
 
-// Attribute Mapping for Recommendation Logic
-// This maps specific Movie IDs from the dataset to the quiz attributes
-const movieAttributes: Record<string, { mood: string[]; story: string[]; character: string[]; ending: string[] }> = {
-  's-stand-by-me-1': {
-    mood: ['Emotional', 'Happy'],
-    story: ['Friendship & bonding', 'Life lesson'],
-    character: ['Nobita', 'Doraemon'],
-    ending: ['Emotional', 'Happy']
+// ------------------------------------------------------------------
+// 1. Data Structure Definition
+// ------------------------------------------------------------------
+
+type Mood = 'Emotional' | 'Happy' | 'Goosebumps' | 'Thought-provoking';
+type StoryType = 'Friendship & bonding' | 'Adventure & action' | 'Sci-fi & gadgets' | 'Life lesson';
+type CharacterFocus = 'Nobita' | 'Doraemon' | 'All friends' | 'Any';
+type Ending = 'Happy' | 'Emotional' | 'Surprise' | 'Any';
+type Era = 'Classic' | 'Modern' | 'Any';
+
+interface MovieLogicItem {
+  id: string; // Must match dataset.ts IDs
+  title: string;
+  year: number;
+  mood: Mood;
+  storyType: StoryType;
+  character: CharacterFocus;
+  ending: Ending;
+  era: Era;
+  dominant: boolean; // Flag for over-popular movies to apply anti-dominance penalty
+}
+
+// ------------------------------------------------------------------
+// 2. Recommendation Database
+// ------------------------------------------------------------------
+
+const recommendationDatabase: MovieLogicItem[] = [
+  {
+    id: 's-stand-by-me-1',
+    title: 'Stand by Me Doraemon',
+    year: 2014,
+    mood: 'Emotional',
+    storyType: 'Friendship & bonding',
+    character: 'Nobita',
+    ending: 'Happy',
+    era: 'Modern',
+    dominant: true
   },
-  's-stand-by-me-2': {
-    mood: ['Emotional', 'Thought-provoking'],
-    story: ['Family', 'Life lesson'],
-    character: ['Nobita'],
-    ending: ['Happy', 'Emotional']
+  {
+    id: 's-stand-by-me-2',
+    title: 'Stand by Me Doraemon 2',
+    year: 2020,
+    mood: 'Emotional',
+    storyType: 'Life lesson',
+    character: 'Nobita',
+    ending: 'Emotional',
+    era: 'Modern',
+    dominant: true
   },
-  'm-steel-troops': {
-    mood: ['Goosebumps', 'Emotional'],
-    story: ['Adventure & action', 'Friendship & bonding'],
-    character: ['All friends'],
-    ending: ['Emotional']
+  {
+    id: 'm-steel-troops',
+    title: 'Nobita and the New Steel Troops',
+    year: 2011,
+    mood: 'Goosebumps',
+    storyType: 'Adventure & action',
+    character: 'All friends',
+    ending: 'Emotional',
+    era: 'Modern',
+    dominant: true
   },
-  'm-sky-utopia': {
-    mood: ['Thought-provoking', 'Happy'],
-    story: ['Sci-fi & gadgets', 'Friendship & bonding'],
-    character: ['All friends', 'Doraemon'],
-    ending: ['Happy', 'Surprise']
+  {
+    id: 'm-sky-utopia',
+    title: "Nobita's Sky Utopia",
+    year: 2023,
+    mood: 'Thought-provoking',
+    storyType: 'Friendship & bonding',
+    character: 'All friends',
+    ending: 'Happy',
+    era: 'Modern',
+    dominant: false
   },
-  'm-treasure-island': {
-    mood: ['Goosebumps', 'Happy'],
-    story: ['Adventure & action'],
-    character: ['All friends'],
-    ending: ['Happy', 'Emotional']
+  {
+    id: 'm-treasure-island',
+    title: "Nobita's Treasure Island",
+    year: 2018,
+    mood: 'Goosebumps',
+    storyType: 'Adventure & action',
+    character: 'All friends',
+    ending: 'Emotional',
+    era: 'Modern',
+    dominant: false
   },
-  'm-gadget-museum': {
-    mood: ['Happy'],
-    story: ['Sci-fi & gadgets', 'Mystery'],
-    character: ['Doraemon', 'Nobita'],
-    ending: ['Happy']
+  {
+    id: 'm-gadget-museum',
+    title: "Nobita's Secret Gadget Museum",
+    year: 2013,
+    mood: 'Happy',
+    storyType: 'Sci-fi & gadgets',
+    character: 'Doraemon',
+    ending: 'Happy',
+    era: 'Modern',
+    dominant: false
   },
-  'm-earth-symphony': {
-    mood: ['Happy', 'Goosebumps'],
-    story: ['Adventure & action', 'Music'],
-    character: ['All friends'],
-    ending: ['Happy']
+  {
+    id: 'm-earth-symphony',
+    title: "Nobita's Earth Symphony",
+    year: 2024,
+    mood: 'Happy',
+    storyType: 'Adventure & action',
+    character: 'All friends',
+    ending: 'Happy',
+    era: 'Modern',
+    dominant: false
   },
-  'm-underworld': {
-    mood: ['Goosebumps'],
-    story: ['Adventure & action', 'Magic'],
-    character: ['All friends'],
-    ending: ['Happy']
+  {
+    id: 'm-underworld',
+    title: "Nobita's New Great Adventure into the Underworld",
+    year: 2007,
+    mood: 'Goosebumps',
+    storyType: 'Adventure & action',
+    character: 'All friends',
+    ending: 'Happy',
+    era: 'Modern',
+    dominant: false
   },
-  'm-birth-japan': {
-    mood: ['Happy', 'Thought-provoking'],
-    story: ['Adventure & action', 'Life lesson'],
-    character: ['All friends'],
-    ending: ['Happy']
+  {
+    id: 'm-birth-japan',
+    title: "Nobita and the Birth of Japan",
+    year: 2016,
+    mood: 'Happy',
+    storyType: 'Life lesson',
+    character: 'All friends',
+    ending: 'Happy',
+    era: 'Modern',
+    dominant: false
   },
-  'm-moon-exploration': {
-    mood: ['Thought-provoking', 'Goosebumps'],
-    story: ['Sci-fi & gadgets', 'Friendship & bonding'],
-    character: ['All friends'],
-    ending: ['Surprise', 'Happy']
+  {
+    id: 'm-moon-exploration',
+    title: "Nobita's Chronicle of the Moon Exploration",
+    year: 2019,
+    mood: 'Thought-provoking',
+    storyType: 'Sci-fi & gadgets',
+    character: 'All friends',
+    ending: 'Surprise',
+    era: 'Modern',
+    dominant: false
+  },
+  {
+    id: 'm-little-star-wars',
+    title: "Nobita's Little Star Wars 2021",
+    year: 2021,
+    mood: 'Goosebumps',
+    storyType: 'Adventure & action',
+    character: 'All friends',
+    ending: 'Happy',
+    era: 'Modern',
+    dominant: false
+  },
+  {
+    id: 'm-dinosaur',
+    title: "Nobita's Dinosaur",
+    year: 2006,
+    mood: 'Emotional',
+    storyType: 'Friendship & bonding',
+    character: 'Nobita',
+    ending: 'Emotional',
+    era: 'Classic', // Using Classic feel for 2006 or 1980 version logic
+    dominant: true
+  },
+  {
+    id: 'm-kingdom-clouds',
+    title: "Nobita and the Kingdom of Clouds",
+    year: 1992,
+    mood: 'Thought-provoking',
+    storyType: 'Life lesson',
+    character: 'Doraemon',
+    ending: 'Surprise',
+    era: 'Classic',
+    dominant: false
+  },
+  {
+    id: 'm-dorabian-nights',
+    title: "Nobita's Dorabian Nights",
+    year: 1991,
+    mood: 'Goosebumps',
+    storyType: 'Adventure & action',
+    character: 'All friends',
+    ending: 'Happy',
+    era: 'Classic',
+    dominant: false
+  },
+  {
+    id: 'm-steel-troops', // Mapping classic logic to same ID if dataset only has one, or separate if needed
+    title: "Nobita and the Steel Troops (Original)", 
+    year: 1986,
+    mood: 'Emotional',
+    storyType: 'Adventure & action',
+    character: 'All friends',
+    ending: 'Emotional',
+    era: 'Classic',
+    dominant: false
+  },
+  {
+    id: 'm-wan-nyan',
+    title: "Wan Nyan Spacetime Odyssey",
+    year: 2004,
+    mood: 'Emotional',
+    storyType: 'Life lesson',
+    character: 'Nobita',
+    ending: 'Emotional',
+    era: 'Classic',
+    dominant: false
+  },
+  {
+    id: 'm-tin-labyrinth',
+    title: "Nobita and the Tin Labyrinth",
+    year: 1993,
+    mood: 'Goosebumps',
+    storyType: 'Sci-fi & gadgets',
+    character: 'Nobita',
+    ending: 'Happy',
+    era: 'Classic',
+    dominant: false
   }
-};
+];
+
+// ------------------------------------------------------------------
+// 3. Questions Configuration
+// ------------------------------------------------------------------
 
 const questions = [
   {
@@ -81,66 +236,78 @@ const questions = [
       { label: 'Emotional 😢', value: 'Emotional', color: 'bg-blue-50 border-blue-200' },
       { label: 'Happy 😄', value: 'Happy', color: 'bg-yellow-50 border-yellow-200' },
       { label: 'Goosebumps 🔥', value: 'Goosebumps', color: 'bg-red-50 border-red-200' },
-      { label: 'Thought-provoking 🤔', value: 'Thought-provoking', color: 'bg-purple-50 border-purple-200' }
+      { label: 'Thoughtful 🤔', value: 'Thought-provoking', color: 'bg-purple-50 border-purple-200' }
     ]
   },
   {
-    id: 'story',
+    id: 'storyType',
     text: "What type of story do you want?",
     options: [
-      { label: 'Friendship & Bonding 🤝', value: 'Friendship & bonding' },
-      { label: 'Adventure & Action ⚔️', value: 'Adventure & action' },
-      { label: 'Sci-fi & Gadgets 🤖', value: 'Sci-fi & gadgets' },
+      { label: 'Friendship 🤝', value: 'Friendship & bonding' },
+      { label: 'Action ⚔️', value: 'Adventure & action' },
+      { label: 'Sci-Fi 🤖', value: 'Sci-fi & gadgets' },
       { label: 'Life Lesson 🌱', value: 'Life lesson' }
     ]
   },
   {
     id: 'character',
-    text: "Which character should focus on?",
+    text: "Who should be the main focus?",
     options: [
       { label: 'Nobita 🤓', value: 'Nobita' },
       { label: 'Doraemon 🐱', value: 'Doraemon' },
-      { label: 'All Friends 👨‍👩‍👧‍👦', value: 'All friends' },
+      { label: 'Team 👨‍👩‍👧‍👦', value: 'All friends' },
       { label: 'Any 🎲', value: 'Any' }
     ]
   },
   {
     id: 'ending',
-    text: "How should the ending feel?",
+    text: "How should it end?",
     options: [
       { label: 'Happy 🎉', value: 'Happy' },
-      { label: 'Emotional 😭', value: 'Emotional' },
-      { label: 'Surprise 🤯', value: 'Surprise' },
-      { label: 'Don\'t care 🤷', value: 'Any' }
+      { label: 'Tearjerker 😭', value: 'Emotional' },
+      { label: 'Mind-blowing 🤯', value: 'Surprise' },
+      { label: 'Surprise Me 🤷', value: 'Any' }
+    ]
+  },
+  {
+    id: 'era',
+    text: "Preferred Animation Style?",
+    options: [
+      { label: 'Modern (Crisp) ✨', value: 'Modern' },
+      { label: 'Classic (Nostalgic) 📺', value: 'Classic' },
+      { label: 'No Preference 🌀', value: 'Any' }
     ]
   }
 ];
 
 export const MovieRecommender: React.FC<MovieRecommenderProps> = ({ onViewDetails, onFindScenes }) => {
-  const [step, setStep] = useState(0); // 0 = Intro, 1-4 = Questions, 5 = Result
+  const [step, setStep] = useState(0); // 0=Intro, 1-5=Questions, 6=Loading, 7=Result
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [result, setResult] = useState<ContentItem | null>(null);
+  const [reasoning, setReasoning] = useState<string>('');
   const [isAnimating, setIsAnimating] = useState(false);
+  const [recentHistory, setRecentHistory] = useState<string[]>([]);
 
-  // Load last result from local storage on mount
+  // Load history from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('det_last_recommendation');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      // Optional: Could restore state here if we wanted persistent results across reloads
-      // For now, we start fresh to encourage interaction, but logic is ready.
+    const history = localStorage.getItem('det_recent_recommendations');
+    if (history) {
+      try {
+        setRecentHistory(JSON.parse(history));
+      } catch (e) {
+        console.error("Failed to parse history", e);
+      }
     }
   }, []);
 
-  const handleStart = () => {
-    advanceStep(1);
-  };
+  const handleStart = () => advanceStep(1);
 
   const handleAnswer = (questionId: string, value: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
     if (step < questions.length) {
       advanceStep(step + 1);
     } else {
+      // Calculate result after the last question (step 5)
       calculateResult({ ...answers, [questionId]: value });
     }
   };
@@ -155,52 +322,100 @@ export const MovieRecommender: React.FC<MovieRecommenderProps> = ({ onViewDetail
 
   const calculateResult = (finalAnswers: Record<string, string>) => {
     setIsAnimating(true);
-    
-    // Scoring Logic
-    const scores: Record<string, number> = {};
-    
-    // Default score for all movies to prevent empty results
-    const candidateMovies = dataset.filter(m => m.type === ContentType.MOVIE || m.type === ContentType.SPECIAL);
-    
-    candidateMovies.forEach(movie => {
-      scores[movie.id] = 0;
-      const attrs = movieAttributes[movie.id];
-      
-      if (attrs) {
-        // Match Mood
-        if (attrs.mood.includes(finalAnswers['mood'])) scores[movie.id] += 3;
-        // Match Story
-        if (attrs.story.includes(finalAnswers['story'])) scores[movie.id] += 2;
-        // Match Character (Weighted less if 'Any')
-        if (finalAnswers['character'] !== 'Any' && attrs.character.includes(finalAnswers['character'])) scores[movie.id] += 2;
-        // Match Ending
-        if (finalAnswers['ending'] !== 'Any' && attrs.ending.includes(finalAnswers['ending'])) scores[movie.id] += 1;
-      } else {
-        // Fallback for movies not in the manual attribute map: fuzzy match text in description
-        const desc = movie.description.toLowerCase();
-        if (desc.includes(finalAnswers['mood'].toLowerCase())) scores[movie.id] += 1;
-        if (desc.includes(finalAnswers['story'].split(' ')[0].toLowerCase())) scores[movie.id] += 1;
-      }
-    });
-
-    // Find highest score
-    const sortedIds = Object.keys(scores).sort((a, b) => scores[b] - scores[a]);
-    const topId = sortedIds[0];
-    const topMovie = candidateMovies.find(m => m.id === topId);
+    // Move to loading step
+    setStep(questions.length + 1);
 
     setTimeout(() => {
-      if (topMovie) {
-        setResult(topMovie);
-        localStorage.setItem('det_last_recommendation', JSON.stringify(topMovie));
-        setStep(questions.length + 1);
-      } else {
-        // Fallback to Stand By Me if something fails
-        const fallback = candidateMovies.find(m => m.id === 's-stand-by-me-1');
-        setResult(fallback || null);
-        setStep(questions.length + 1);
+      // -------------------------------------------------------
+      // ALGORITHM IMPLEMENTATION
+      // -------------------------------------------------------
+      
+      const scores = recommendationDatabase.map(movie => {
+        let score = 0;
+        let reasons: string[] = [];
+
+        // 1. Mood (Weight: 3)
+        if (movie.mood === finalAnswers.mood) {
+          score += 3;
+          reasons.push(finalAnswers.mood);
+        }
+
+        // 2. Story Type (Weight: 2)
+        if (movie.storyType === finalAnswers.storyType) {
+          score += 2;
+          reasons.push(movie.storyType.split(' ')[0]); // "Adventure" from "Adventure & Action"
+        }
+
+        // 3. Character (Weight: 2)
+        if (finalAnswers.character !== 'Any') {
+          if (movie.character === finalAnswers.character) {
+            score += 2;
+            reasons.push(`${movie.character}-focused`);
+          }
+        }
+
+        // 4. Ending (Weight: 1)
+        if (finalAnswers.ending !== 'Any') {
+          if (movie.ending === finalAnswers.ending) score += 1;
+        }
+
+        // 5. Era (Weight: 1)
+        if (finalAnswers.era !== 'Any') {
+          if (movie.era === finalAnswers.era) {
+            score += 1;
+          }
+        }
+
+        // 6. Anti-Dominance Penalty
+        if (movie.dominant) {
+          score -= 1;
+        }
+
+        // 7. Recent History Penalty
+        if (recentHistory.includes(movie.id)) {
+          score -= 2;
+        }
+
+        return { ...movie, score, reasons };
+      });
+
+      // Sort by score descending
+      scores.sort((a, b) => b.score - a.score);
+
+      // Top-Tier Randomization
+      // Get the max score
+      const maxScore = scores[0].score;
+      // Filter candidates that are within 1 point of the max score
+      // This ensures we don't always pick the absolute #1 if others are very close
+      const topCandidates = scores.filter(s => s.score >= maxScore - 1);
+
+      // Pick random winner from top tier
+      const winnerLogic = topCandidates[Math.floor(Math.random() * topCandidates.length)];
+
+      // Construct "Why" string
+      const whyString = `Suggested because you chose ${finalAnswers.mood} mood` + 
+        (winnerLogic.reasons.length > 1 ? `, wanted ${winnerLogic.reasons[1]} stories` : '') +
+        (finalAnswers.character !== 'Any' ? ` focusing on ${finalAnswers.character}` : '') + '.';
+
+      // Map to full dataset item
+      // We look for the ID in the main dataset
+      let fullMovieItem = dataset.find(item => item.id === winnerLogic.id);
+      
+      // Fallback if ID mapping fails (should not happen if IDs are synced)
+      if (!fullMovieItem) {
+        fullMovieItem = dataset.find(item => item.type === ContentType.MOVIE) || dataset[0];
       }
+
+      // Update History
+      const newHistory = [winnerLogic.id, ...recentHistory.filter(id => id !== winnerLogic.id)].slice(0, 5);
+      localStorage.setItem('det_recent_recommendations', JSON.stringify(newHistory));
+      setRecentHistory(newHistory);
+
+      setResult(fullMovieItem);
+      setReasoning(whyString);
+      setStep(questions.length + 2); // Show Result
       setIsAnimating(false);
-    }, 800); // Slight delay for "Thinking" effect
+    }, 1500); // 1.5s Fake Loading Time
   };
 
   const reset = () => {
@@ -209,6 +424,11 @@ export const MovieRecommender: React.FC<MovieRecommenderProps> = ({ onViewDetail
     setResult(null);
   };
 
+  // ------------------------------------------------------------------
+  // UI RENDERERS
+  // ------------------------------------------------------------------
+
+  // STEP 0: INTRO
   if (step === 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-2">
@@ -226,7 +446,7 @@ export const MovieRecommender: React.FC<MovieRecommenderProps> = ({ onViewDetail
                         Which Doraemon Movie Should You Watch?
                     </h2>
                     <p className="text-slate-500 text-sm font-medium">
-                        Answer 4 simple questions and let AI pick your perfect movie!
+                        Answer 5 quick questions and let our AI pick your perfect movie!
                     </p>
                 </div>
                 <button 
@@ -241,8 +461,25 @@ export const MovieRecommender: React.FC<MovieRecommenderProps> = ({ onViewDetail
     );
   }
 
-  // Result View
-  if (step > questions.length && result) {
+  // STEP 6: LOADING
+  if (step === questions.length + 1) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-2">
+        <div className="bg-white rounded-[2rem] p-12 shadow-lg border border-blue-100 flex flex-col items-center justify-center text-center">
+            <div className="relative w-20 h-20 mb-6">
+                 <div className="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
+                 <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+                 <i className="fa-solid fa-robot absolute inset-0 flex items-center justify-center text-blue-600 text-2xl animate-pulse"></i>
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-2">Analyzing your preferences...</h3>
+            <p className="text-slate-500 text-sm">Checking 40+ movies against your mood.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // STEP 7: RESULT
+  if (step > questions.length + 1 && result) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-2">
         <div className={`bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2rem] p-1 shadow-xl transition-all duration-500 ${isAnimating ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
@@ -252,20 +489,22 @@ export const MovieRecommender: React.FC<MovieRecommenderProps> = ({ onViewDetail
                 
                 <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center">
                     <div className="w-full md:w-1/3 shrink-0">
-                         <div className="relative aspect-video md:aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl rotate-1 hover:rotate-0 transition-transform duration-500">
+                         <div className="relative aspect-video md:aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl rotate-1 hover:rotate-0 transition-transform duration-500 bg-slate-200">
                             <img src={result.image} alt={result.title} className="w-full h-full object-cover" />
-                            <div className="absolute top-2 left-2 bg-yellow-400 text-black text-[10px] font-black px-2 py-1 rounded-lg shadow-sm uppercase">Top Pick</div>
+                            <div className="absolute top-2 left-2 bg-yellow-400 text-black text-[10px] font-black px-2 py-1 rounded-lg shadow-sm uppercase tracking-wide">
+                                {recommendationDatabase.find(r => r.id === result.id)?.year} • Top Pick
+                            </div>
                          </div>
                     </div>
                     
                     <div className="w-full md:w-2/3 text-center md:text-left">
-                         <h3 className="text-blue-600 font-black text-sm uppercase tracking-widest mb-2">We Recommend</h3>
+                         <h3 className="text-blue-600 font-black text-sm uppercase tracking-widest mb-2">Based on your choices</h3>
                          <h2 className="text-2xl sm:text-4xl font-black text-slate-900 mb-4 leading-tight">{result.title}</h2>
                          
                          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 inline-block text-left w-full">
-                            <p className="text-slate-600 text-xs sm:text-sm italic">
+                            <p className="text-slate-600 text-xs sm:text-sm font-medium">
                                 <i className="fa-solid fa-quote-left text-blue-300 mr-2"></i>
-                                Suggested because you chose <strong>{answers['mood']}</strong>, wanted a <strong>{answers['story']}</strong> story, and prefer <strong>{answers['ending']}</strong> endings.
+                                {reasoning}
                             </p>
                          </div>
 
@@ -297,7 +536,7 @@ export const MovieRecommender: React.FC<MovieRecommenderProps> = ({ onViewDetail
     );
   }
 
-  // Quiz View
+  // STEP 1-5: QUESTIONS
   const currentQ = questions[step - 1];
 
   return (
