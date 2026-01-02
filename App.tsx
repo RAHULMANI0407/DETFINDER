@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { dataset as initialDataset } from './data/dataset';
 import { SearchBox } from './components/SearchBox';
@@ -6,10 +7,8 @@ import { FollowPopup } from './components/FollowPopup';
 import { AIAssistant } from './components/AIAssistant';
 import { Login } from './components/Login';
 import { AdminDashboard } from './components/AdminDashboard';
+import { DetailModal } from './components/DetailModal';
 import { ContentType, SearchResult, User, UserRole, ContentItem } from './types';
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "./lib/firebase";
-
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -23,34 +22,21 @@ const App: React.FC = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [currentQuery, setCurrentQuery] = useState('');
   const [showFollowPopup, setShowFollowPopup] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null);
 
   // Load persistent user and custom data on mount
- useEffect(() => {
-  const storedUser = localStorage.getItem('det_user');
-  if (storedUser) setUser(JSON.parse(storedUser));
+  useEffect(() => {
+    const storedUser = localStorage.getItem('det_user');
+    if (storedUser) setUser(JSON.parse(storedUser));
 
-  // 🔹 Load Firestore content_items
-  const loadFirestoreData = async () => {
-    try {
-      const snap = await getDocs(collection(db, "content_items"));
-      const items: ContentItem[] = snap.docs.map(doc => ({
-        id: doc.id,
-        ...(doc.data() as ContentItem),
-      }));
-      setCustomDataset(items);
-    } catch (err) {
-      console.error("Failed to load Firestore content", err);
-    }
-  };
+    const storedCustom = localStorage.getItem('det_custom_data');
+    if (storedCustom) setCustomDataset(JSON.parse(storedCustom));
 
-  loadFirestoreData();
-
-  const timer = setTimeout(() => {
-    setShowFollowPopup(true);
-  }, 2000);
-
-  return () => clearTimeout(timer);
-}, []);
+    const timer = setTimeout(() => {
+      setShowFollowPopup(true);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const combinedDataset = useMemo(() => [...initialDataset, ...customDataset], [customDataset]);
 
@@ -188,7 +174,8 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-[#f8fafc] pb-[80px] md:pb-0">
       <FollowPopup isVisible={showFollowPopup} onClose={() => setShowFollowPopup(false)} />
-      < AIAssistant />
+      <AIAssistant />
+      <DetailModal item={selectedItem} onClose={() => setSelectedItem(null)} />
       
       {showLogin && <Login onLogin={handleLogin} onClose={() => setShowLogin(false)} />}
       {showAdmin && <AdminDashboard onAddItem={handleAddItem} onClose={() => setShowAdmin(false)} />}
@@ -197,11 +184,9 @@ const App: React.FC = () => {
       <header className="bg-white border-b border-blue-100 sticky top-0 z-[45] shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer group" onClick={resetSearch}>
-            <img
-               src="https://res.cloudinary.com/duj55eee1/image/upload/v1766580092/Gemini_Generated_Image_ppcs3vppcs3vppcs_yfsav1.png"
-               alt="DET Finder Logo"
-              className="w-9 h-9 rounded-xl shadow-lg object-contain"
-           />
+            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white text-lg shadow-lg group-hover:scale-110 transition-transform">
+              <i className="fa-solid fa-robot"></i>
+            </div>
             <div className="flex flex-col -gap-1">
               <h1 className="text-lg font-black text-blue-700 tracking-tighter uppercase leading-none">
                 DET<span className="text-slate-800">FINDER</span>
@@ -247,6 +232,52 @@ const App: React.FC = () => {
           </div>
         </div>
       </header>
+      
+      {/* Mobile Top Category Navigation (Visible on small screens) */}
+      <nav className="lg:hidden sticky top-[61px] z-40 bg-white/95 backdrop-blur-md border-b border-blue-50 overflow-x-auto">
+        <div className="flex items-center gap-2 px-4 py-3 min-w-max">
+            <button 
+              onClick={() => handleNavClick('All')} 
+              className={`px-4 py-1.5 rounded-full text-xs font-bold border whitespace-nowrap transition-all ${
+                activeCategory === 'All' && !searchResults 
+                ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
+                : 'bg-white text-slate-600 border-slate-200'
+              }`}
+            >
+              All Content
+            </button>
+            <button 
+              onClick={() => handleNavClick(ContentType.MOVIE)} 
+              className={`px-4 py-1.5 rounded-full text-xs font-bold border whitespace-nowrap transition-all ${
+                activeCategory === ContentType.MOVIE 
+                ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
+                : 'bg-white text-slate-600 border-slate-200'
+              }`}
+            >
+              Movies
+            </button>
+            <button 
+              onClick={() => handleNavClick(ContentType.EPISODE)} 
+              className={`px-4 py-1.5 rounded-full text-xs font-bold border whitespace-nowrap transition-all ${
+                activeCategory === ContentType.EPISODE 
+                ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
+                : 'bg-white text-slate-600 border-slate-200'
+              }`}
+            >
+              Episodes
+            </button>
+            <button 
+              onClick={() => handleNavClick(ContentType.SPECIAL)} 
+              className={`px-4 py-1.5 rounded-full text-xs font-bold border whitespace-nowrap transition-all ${
+                activeCategory === ContentType.SPECIAL 
+                ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
+                : 'bg-white text-slate-600 border-slate-200'
+              }`}
+            >
+              Specials
+            </button>
+        </div>
+      </nav>
 
       {/* Persistent Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-[55] bg-white/95 backdrop-blur-md border-t border-blue-100 flex items-center justify-around pt-3 pb-6 px-4 md:hidden shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
@@ -271,7 +302,7 @@ const App: React.FC = () => {
       </nav>
 
       <main className="flex-grow">
-        <a href="https://www.instagram.com/doraemon_ever_tamil/" target="_blank" rel="noopener noreferrer" className="block bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 text-white text-center py-2.5 px-4 text-xs sm:text-sm font-bold shadow-md hover:brightness-110 transition-all sticky top-[61px] z-30">
+        <a href="https://www.instagram.com/doraemon_ever_tamil/" target="_blank" rel="noopener noreferrer" className="block bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 text-white text-center py-2.5 px-4 text-xs sm:text-sm font-bold shadow-md hover:brightness-110 transition-all sticky top-[61px] lg:top-[61px] z-30">
           <i className="fa-brands fa-instagram mr-2 text-lg align-middle"></i>
           Follow @doraemon_ever_tamil on Instagram for more!
         </a>
@@ -280,7 +311,7 @@ const App: React.FC = () => {
           <div className="max-w-4xl mx-auto text-center px-4">
             {!isShowingList && (
               <div className="animate-in fade-in slide-in-from-top-4 duration-1000">
-                <div className="inline-block px-4 py-1.5 mb-6 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest shadow-sm">Powered by DET</div>
+                <div className="inline-block px-4 py-1.5 mb-6 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest shadow-sm">Powered by DET & Gemini AI</div>
                 <h2 className="text-4xl sm:text-6xl font-extrabold text-slate-900 mb-6 leading-tight tracking-tight">Find Your Favorite <br /> <span className="text-blue-600">Doraemon</span> Moment.</h2>
                 <p className="text-base sm:text-lg text-slate-500 mb-10 max-w-xl mx-auto leading-relaxed">Search episodes, movies, and specials in Tamil. <br className="hidden sm:block" /> Describe the story and our AI finds the link.</p>
               </div>
@@ -315,7 +346,13 @@ const App: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-1 gap-6 max-w-4xl mx-auto">
                   {bestMatches.map(item => (
-                    <ResultCard key={item.id} item={item} searchReasoning={searchResults?.reasoningMap?.[item.id]} matchType={searchResults?.matchTypeMap?.[item.id]} />
+                    <ResultCard 
+                      key={item.id} 
+                      item={item} 
+                      searchReasoning={searchResults?.reasoningMap?.[item.id]} 
+                      matchType={searchResults?.matchTypeMap?.[item.id]} 
+                      onClick={() => setSelectedItem(item)}
+                    />
                   ))}
                 </div>
               </div>
@@ -333,7 +370,13 @@ const App: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {relatedMatches.map(item => (
-                    <ResultCard key={item.id} item={item} searchReasoning={searchResults?.reasoningMap?.[item.id]} matchType={searchResults?.matchTypeMap?.[item.id]} />
+                    <ResultCard 
+                      key={item.id} 
+                      item={item} 
+                      searchReasoning={searchResults?.reasoningMap?.[item.id]} 
+                      matchType={searchResults?.matchTypeMap?.[item.id]} 
+                      onClick={() => setSelectedItem(item)}
+                    />
                   ))}
                 </div>
               </div>
@@ -351,12 +394,32 @@ const App: React.FC = () => {
             )}
           </section>
         )}
+
+        {/* Official Disclaimer Section */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-12">
+          <div className="bg-blue-50/50 border border-blue-100 rounded-[2rem] p-8 sm:p-10 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-5">
+              <i className="fa-solid fa-scale-balanced text-8xl text-blue-900"></i>
+            </div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white text-xs">
+                  <i className="fa-solid fa-circle-info"></i>
+                </div>
+                <h3 className="text-sm font-black text-blue-900 uppercase tracking-[0.2em]">Legal Disclaimer</h3>
+              </div>
+              <div className="space-y-4 max-w-4xl">
+                <p className="text-slate-600 text-xs sm:text-sm leading-relaxed font-medium">
+                  <strong>DET Finder</strong> is an unofficial, non-commercial fan-powered platform created solely for the Doraemon fan community. This website does not host, store, or upload any video files or copyrighted media on its servers. We provide an indexed search engine that directs users to content links available on external platforms like Telegram.
+                </p>
+                <p className="text-slate-500 text-[11px] sm:text-xs leading-relaxed italic">
+                  All characters, names, images, and related media are the exclusive intellectual property of their respective owners, including but not limited to <strong>Fujiko F. Fujio, Shin-Ei Animation, TV Asahi, and ADK</strong>. No copyright infringement is intended. If you are a copyright owner and wish to have content removed, please contact the respective hosting platforms directly.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
-      
-<section className="text-center text-xs text-slate-500 py-6">
-  DET Finder is created for Doraemon fans to discover movies and episodes in Tamil.
-  This project is not affiliated with TV Asahi, Shin-Ei Animation, or Fujiko F. Fujio.
-</section>
 
       <footer className="bg-slate-900 text-white pt-16 pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -383,13 +446,6 @@ const App: React.FC = () => {
               <a href="https://www.instagram.com/doraemon_ever_tamil/" target="_blank" className="flex items-center justify-center sm:justify-start gap-3 text-slate-400 hover:text-pink-400 transition-colors text-sm font-bold"><i className="fa-brands fa-instagram text-xl"></i> Instagram Feed</a>
             </div>
           </div>
-          <p className="text-slate-600 text-[18px] leading-relaxed mt-4 max-w-3xl mx-auto">
-  Disclaimer: DET Finder is a fan-made, non-commercial project.
-  Doraemon and related characters are the property of their respective copyright owners.
-  This website does not host or stream any content.
-  Links are provided for informational and community reference purposes only.
-</p>
-
 
           <div className="pt-8 border-t border-slate-800 text-center">
             <p className="text-slate-500 text-[10px] font-bold tracking-[0.2em] uppercase mb-4">Crafted for Doraemon Fans in Tamil • Powered by DET</p>
