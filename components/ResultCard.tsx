@@ -6,9 +6,10 @@ interface ResultCardProps {
   item: ContentItem;
   searchReasoning?: string[];
   matchType?: MatchType;
+  onClick?: () => void;
 }
 
-export const ResultCard: React.FC<ResultCardProps> = ({ item, searchReasoning, matchType }) => {
+export const ResultCard: React.FC<ResultCardProps> = ({ item, searchReasoning, matchType, onClick }) => {
   const isTamil = item.language === Language.TAMIL;
 
   const copyToClipboard = (text: string, url: string) => {
@@ -17,6 +18,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ item, searchReasoning, m
   };
 
   const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
     e.preventDefault();
     const shareTitle = item.title;
     const shareText = `Check out "${item.title}" on DET Finder!`;
@@ -24,23 +26,23 @@ export const ResultCard: React.FC<ResultCardProps> = ({ item, searchReasoning, m
 
     if (navigator.share) {
       try {
-        // Attempt to share using the system share sheet
         await navigator.share({
           title: shareTitle,
           text: shareText,
           url: shareUrl,
         });
       } catch (error: any) {
-        // If the user cancelled (AbortError), do nothing. 
-        // For any other error (like 'Invalid URL' in sandbox environments), fallback to clipboard.
         if (error.name !== 'AbortError') {
           copyToClipboard(shareText, shareUrl);
         }
       }
     } else {
-      // Fallback for browsers that don't support the Web Share API
       copyToClipboard(shareText, shareUrl);
     }
+  };
+
+  const handleTelegramClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
   };
 
   const getMatchTypeStyles = (type: MatchType) => {
@@ -55,7 +57,10 @@ export const ResultCard: React.FC<ResultCardProps> = ({ item, searchReasoning, m
   };
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-blue-100 flex flex-col h-full group">
+    <div 
+      onClick={onClick}
+      className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-blue-100 flex flex-col h-full group cursor-pointer relative"
+    >
       <div className="relative h-44 overflow-hidden bg-blue-50">
         <img 
           src={item.image || `https://picsum.photos/seed/${item.id}/400/225`} 
@@ -83,6 +88,11 @@ export const ResultCard: React.FC<ResultCardProps> = ({ item, searchReasoning, m
               <i className="fa-solid fa-star text-[8px]"></i> {item.imdbRating}
             </span>
           )}
+        </div>
+        
+        {/* Hover overlay hint */}
+        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+           <span className="text-white text-xs font-bold border border-white/50 px-3 py-1.5 rounded-full backdrop-blur-sm">View Details</span>
         </div>
       </div>
       
@@ -129,11 +139,12 @@ export const ResultCard: React.FC<ResultCardProps> = ({ item, searchReasoning, m
             ))}
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 relative z-10">
             <a 
               href={item.telegram_link} 
               target="_blank" 
               rel="noopener noreferrer"
+              onClick={handleTelegramClick}
               className="flex-grow flex items-center justify-center gap-2 bg-[#229ED9] hover:bg-[#1e88ba] text-white py-2 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95"
             >
               <i className="fa-brands fa-telegram"></i>
