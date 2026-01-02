@@ -8,6 +8,7 @@ import { AIAssistant } from './components/AIAssistant';
 import { Login } from './components/Login';
 import { AdminDashboard } from './components/AdminDashboard';
 import { DetailModal } from './components/DetailModal';
+import { MovieRecommender } from './components/MovieRecommender';
 import { ContentType, SearchResult, User, UserRole, ContentItem } from './types';
 
 const App: React.FC = () => {
@@ -71,6 +72,21 @@ const App: React.FC = () => {
         }
       }, 100);
     }, 300);
+  };
+
+  // Handler for "Find Scenes" in Recommender
+  const handlePreFillSearch = (title: string) => {
+      // We trigger a search via the SearchBox essentially by scrolling up and setting state,
+      // but SearchBox manages its own input state. 
+      // A cleaner way in this architecture is to treat it as a search result directly
+      // OR scroll to search and let user type. 
+      // Requirement said "Find Scenes". Let's perform a search for that title.
+      
+      const results = combinedDataset.filter(item => 
+          item.title.toLowerCase().includes(title.toLowerCase())
+      );
+      
+      handleSearch({ matches: results, matchTypeMap: {}, relevanceScoreMap: {} }, title);
   };
 
   const isShowingList = searchResults !== null || activeCategory !== 'All';
@@ -307,7 +323,12 @@ const App: React.FC = () => {
           Follow @doraemon_ever_tamil on Instagram for more!
         </a>
 
-        <section className={`bg-gradient-to-b from-blue-50 via-white to-white transition-all duration-500 ease-in-out ${isShowingList ? 'pt-8 pb-10' : 'pt-24 pb-32'}`}>
+        {/* Movie Recommender Section - ONLY Show when not showing a search list */}
+        {!isShowingList && (
+           <MovieRecommender onViewDetails={setSelectedItem} onFindScenes={handlePreFillSearch} />
+        )}
+
+        <section className={`bg-gradient-to-b from-blue-50 via-white to-white transition-all duration-500 ease-in-out ${isShowingList ? 'pt-8 pb-10' : 'pt-10 pb-32'}`}>
           <div className="max-w-4xl mx-auto text-center px-4">
             {!isShowingList && (
               <div className="animate-in fade-in slide-in-from-top-4 duration-1000">
