@@ -38,17 +38,22 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
   }, []);
 
   // ✅ Save search to Firebase (added)
-  const saveSearchToFirebase = async (searchQuery: string) => {
-    try {
-      await addDoc(collection(db, "searchHistory"), {
-        query: searchQuery.trim(),
-        createdAt: serverTimestamp(),
-      });
-      console.log("✅ Search saved to Firebase:", searchQuery);
-    } catch (err) {
-      console.error("❌ Firebase save error:", err);
-    }
-  };
+ const saveSearchToFirebase = async (searchQuery: string, results: any) => {
+  try {
+    await addDoc(collection(db, "search_cache"), {
+      query: searchQuery.trim(),
+      createdAt: serverTimestamp(),
+
+      // ✅ full result object (like old)
+      result: results,
+    });
+
+    console.log("✅ Search + Results saved to Firebase");
+  } catch (err) {
+    console.error("❌ Firebase save error:", err);
+  }
+};
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -63,36 +68,33 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
     }
   };
 
-  const handlePerformSearch = async (searchQuery: string) => {
-    const targetQuery = searchQuery.trim();
-    if (!targetQuery) return;
+const handlePerformSearch = async (searchQuery: string) => {
+  const targetQuery = searchQuery.trim();
+  if (!targetQuery) return;
 
-    setIsLoading(true);
-    setShowSuggestions(false);
+  setIsLoading(true);
+  setShowSuggestions(false);
 
-    try {
-      // ✅ Save query in Firebase first
-      await saveSearchToFirebase(targetQuery);
+  try {
+    const results = await SearchService.fuzzySearch(
+      targetQuery,
+      activeCategory as ContentType | "All"
+    );
 
-      // The fuzzySearch currently relies on its own internal dataset import,
-      // in a real app we'd pass the dynamic dataset or store it globally.
-      // For this prototype, we'll let Gemini handle the search over the primary list.
-      const results = await SearchService.fuzzySearch(
-        targetQuery,
-        activeCategory as ContentType | 'All'
-      );
+    onSearch(results, targetQuery);
 
-      onSearch(results, targetQuery);
-    } catch (err) {
-      console.error("Search failed:", err);
-    } finally {
-      setIsLoading(false);
-      const resultsSection = document.getElementById('results-section');
-      if (resultsSection) {
-        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+    // ✅ Save query + full results
+    await saveSearchToFirebase(targetQuery, results);
+  } catch (err) {
+    console.error("Search failed:", err);
+  } finally {
+    setIsLoading(false);
+    const resultsSection = document.getElementById("results-section");
+    if (resultsSection) {
+      resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  };
+  }
+};
 
   const onSuggestionClick = (s: string) => {
     setQuery(s);
