@@ -1,8 +1,11 @@
-
 import { SearchService } from '../services/geminiService';
 import { SearchResult, ContentType, ContentItem } from '../types';
 import React, { useState, useEffect, useRef } from 'react';
 import { dataset } from '../data/dataset';
+
+// ✅ Firebase imports (added)
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "../lib/firebase";
 
 interface SearchBoxProps {
   onSearch: (results: SearchResult, query: string) => void;
@@ -12,7 +15,13 @@ interface SearchBoxProps {
   customDataset?: ContentItem[];
 }
 
-export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, isLoading, setIsLoading, activeCategory = 'All', customDataset = [] }) => {
+export const SearchBox: React.FC<SearchBoxProps> = ({
+  onSearch,
+  isLoading,
+  setIsLoading,
+  activeCategory = 'All',
+  customDataset = [],
+}) => {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -27,6 +36,19 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, isLoading, setIs
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // ✅ Save search to Firebase (added)
+  const saveSearchToFirebase = async (searchQuery: string) => {
+    try {
+      await addDoc(collection(db, "searchHistory"), {
+        query: searchQuery.trim(),
+        createdAt: serverTimestamp(),
+      });
+      console.log("✅ Search saved to Firebase:", searchQuery);
+    } catch (err) {
+      console.error("❌ Firebase save error:", err);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -44,15 +66,22 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, isLoading, setIs
   const handlePerformSearch = async (searchQuery: string) => {
     const targetQuery = searchQuery.trim();
     if (!targetQuery) return;
-    
+
     setIsLoading(true);
     setShowSuggestions(false);
-    
+
     try {
-      // The fuzzySearch currently relies on its own internal dataset import, 
+      // ✅ Save query in Firebase first
+      await saveSearchToFirebase(targetQuery);
+
+      // The fuzzySearch currently relies on its own internal dataset import,
       // in a real app we'd pass the dynamic dataset or store it globally.
       // For this prototype, we'll let Gemini handle the search over the primary list.
-      const results = await SearchService.fuzzySearch(targetQuery, activeCategory as ContentType | 'All');
+      const results = await SearchService.fuzzySearch(
+        targetQuery,
+        activeCategory as ContentType | 'All'
+      );
+
       onSearch(results, targetQuery);
     } catch (err) {
       console.error("Search failed:", err);
@@ -71,12 +100,17 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, isLoading, setIs
   };
 
   const getPlaceholder = () => {
-    switch(activeCategory) {
-      case ContentType.MOVIE: return "Search movies (e.g. 'Steel Troops')...";
-      case ContentType.EPISODE: return "Search episodes (e.g. 'Season 14')...";
-      case ContentType.SPECIAL: return "Search specials (e.g. 'Stand by Me')...";
-      case ContentType.SHORT_FILM: return "Search short films...";
-      default: return "Describe a scene or title...";
+    switch (activeCategory) {
+      case ContentType.MOVIE:
+        return "Search movies (e.g. 'Steel Troops')...";
+      case ContentType.EPISODE:
+        return "Search episodes (e.g. 'Season 14')...";
+      case ContentType.SPECIAL:
+        return "Search specials (e.g. 'Stand by Me')...";
+      case ContentType.SHORT_FILM:
+        return "Search short films...";
+      default:
+        return "Describe a scene or title...";
     }
   };
 
@@ -95,7 +129,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, isLoading, setIs
         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400">
           <i className="fa-solid fa-magnifying-glass"></i>
         </div>
-        <button 
+        <button
           onClick={() => handlePerformSearch(query)}
           disabled={isLoading}
           className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-5 py-2.5 rounded-xl font-bold transition-colors shadow-sm min-w-[100px]"
@@ -108,26 +142,38 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, isLoading, setIs
       {isLoading && (
         <div className="mt-12 flex flex-col items-center animate-in fade-in zoom-in duration-500">
           <div className="relative w-40 h-40">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-28 bg-blue-500 rounded-full border-4 border-white shadow-xl overflow-hidden" 
-                 style={{ animation: 'headTilt 2s infinite ease-in-out' }}>
-               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-18 bg-white rounded-t-[50%]">
-                 <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-4">
-                    <div className="w-1.5 h-3 bg-black rounded-full"></div>
-                    <div className="w-1.5 h-3 bg-black rounded-full"></div>
-                 </div>
-                 <div className="absolute top-7 left-1/2 -translate-x-1/2 w-3 h-3 bg-red-600 rounded-full"></div>
-               </div>
-               <div className="absolute bottom-0 w-full h-3 bg-red-600"></div>
-               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-4 bg-yellow-400 rounded-full border-2 border-slate-800 translate-y-1 z-10 animate-bounce"></div>
+            <div
+              className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-28 bg-blue-500 rounded-full border-4 border-white shadow-xl overflow-hidden"
+              style={{ animation: 'headTilt 2s infinite ease-in-out' }}
+            >
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-18 bg-white rounded-t-[50%]">
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-4">
+                  <div className="w-1.5 h-3 bg-black rounded-full"></div>
+                  <div className="w-1.5 h-3 bg-black rounded-full"></div>
+                </div>
+                <div className="absolute top-7 left-1/2 -translate-x-1/2 w-3 h-3 bg-red-600 rounded-full"></div>
+              </div>
+              <div className="absolute bottom-0 w-full h-3 bg-red-600"></div>
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-4 bg-yellow-400 rounded-full border-2 border-slate-800 translate-y-1 z-10 animate-bounce"></div>
             </div>
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-20 h-12 bg-white rounded-b-full border-2 border-blue-100 z-20 overflow-visible" 
-                 style={{ animation: 'pocketPulse 0.5s infinite alternate ease-in-out' }}>
-               <div className="absolute -top-2 left-2 w-8 h-8 bg-white rounded-full border border-slate-100 shadow-md" style={{ animation: 'circularRummage 0.6s infinite linear' }}></div>
-               <div className="absolute -top-1 right-2 w-8 h-8 bg-white rounded-full border border-slate-100 shadow-md" style={{ animation: 'circularRummage 0.6s infinite linear reverse' }}></div>
+            <div
+              className="absolute bottom-6 left-1/2 -translate-x-1/2 w-20 h-12 bg-white rounded-b-full border-2 border-blue-100 z-20 overflow-visible"
+              style={{ animation: 'pocketPulse 0.5s infinite alternate ease-in-out' }}
+            >
+              <div
+                className="absolute -top-2 left-2 w-8 h-8 bg-white rounded-full border border-slate-100 shadow-md"
+                style={{ animation: 'circularRummage 0.6s infinite linear' }}
+              ></div>
+              <div
+                className="absolute -top-1 right-2 w-8 h-8 bg-white rounded-full border border-slate-100 shadow-md"
+                style={{ animation: 'circularRummage 0.6s infinite linear reverse' }}
+              ></div>
             </div>
           </div>
           <div className="text-center mt-2">
-            <div className="text-blue-600 text-xs font-black tracking-[0.3em] uppercase animate-pulse">Searching 4D Pocket...</div>
+            <div className="text-blue-600 text-xs font-black tracking-[0.3em] uppercase animate-pulse">
+              Searching 4D Pocket...
+            </div>
           </div>
         </div>
       )}
@@ -147,7 +193,9 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, isLoading, setIs
         </div>
       )}
 
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         @keyframes headTilt {
           0%, 100% { transform: translateX(-50%) rotate(0deg); }
           25% { transform: translateX(-52%) rotate(-5deg); }
@@ -162,7 +210,9 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, isLoading, setIs
           50% { transform: translate(0, -5px); }
           100% { transform: translate(0, 0); }
         }
-      `}} />
+      `,
+        }}
+      />
     </div>
   );
 };
