@@ -3,8 +3,16 @@ import { SearchResult, ContentType, ContentItem } from '../types';
 import React, { useState, useEffect, useRef } from 'react';
 import { dataset } from '../data/dataset';
 
-// ✅ Firebase imports (added)
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+// ✅ Firebase imports (cache read + write)
+import {
+  addDoc,
+  collection,
+  serverTimestamp,
+  getDocs,
+  query as fsQuery,
+  where,
+  limit,
+} from "firebase/firestore";
 import { db } from "../lib/firebase";
 
 interface SearchBoxProps {
@@ -37,29 +45,59 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // ✅ Save search to Firebase (added)
- const saveSearchToFirebase = async (searchQuery: string, results: any) => {
-  try {
-    await addDoc(collection(db, "search_cache"), {
-      query: searchQuery.trim(),
-      createdAt: serverTimestamp(),
+  // ✅ Normalize query for consistent cache key
+  const normalizeQuery = (q: string) => q.trim().toLowerCase();
 
-      // ✅ full result object (like old)
-      result: results,
-    });
+  // ✅ Save search + result to Firebase cache
+  const saveSearchToFirebase = async (searchQuery: string, results: any) => {
+    try {
+      const queryKey = normalizeQuery(searchQuery);
 
-    console.log("✅ Search + Results saved to Firebase");
-  } catch (err) {
-    console.error("❌ Firebase save error:", err);
-  }
-};
+      await addDoc(collection(db, "search_cache"), {
+        query: searchQuery.trim(),
+        queryKey, // ✅ used for fast matching
+        createdAt: serverTimestamp(),
+        result: results, // ✅ full result object
+      });
 
+      console.log("✅ Search + Results saved to Firebase:", queryKey);
+    } catch (err) {
+      console.error("❌ Firebase save error:", err);
+    }
+  };
+
+  // ✅ Get cached result from Firebase (if exists)
+  const getCachedSearchFromFirebase = async (searchQuery: string) => {
+    try {
+      const queryKey = normalizeQuery(searchQuery);
+
+      const q = fsQuery(
+        collection(db, "search_cache"),
+        where("queryKey", "==", queryKey),
+        limit(1)
+      );
+
+      const snap = await getDocs(q);
+
+      if (!snap.empty) {
+        console.log("✅ Cache hit:", queryKey);
+        return snap.docs[0].data().result;
+      }
+
+      console.log("❌ Cache miss:", queryKey);
+      return null;
+    } catch (err) {
+      console.error("❌ Cache read error:", err);
+      return null;
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setQuery(val);
+
     if (val.length >= 2) {
-      // Use combined dataset for suggestions if needed, but for now standard dataset is fine
+      // Suggestions from your SearchService (existing behavior)
       setSuggestions(SearchService.getSuggestions(val));
       setShowSuggestions(true);
     } else {
@@ -68,33 +106,47 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
     }
   };
 
-const handlePerformSearch = async (searchQuery: string) => {
-  const targetQuery = searchQuery.trim();
-  if (!targetQuery) return;
+  // ✅ Cache-first search logic:
+  // 1) Read from Firebase cache
+  // 2) If cache miss → call SearchService
+  // 3) Save results to Firebase
+  const handlePerformSearch = async (searchQuery: string) => {
+    const targetQuery = searchQuery.trim();
+    if (!targetQuery) return;
 
-  setIsLoading(true);
-  setShowSuggestions(false);
+    setIsLoading(true);
+    setShowSuggestions(false);
 
-  try {
-    const results = await SearchService.fuzzySearch(
-      targetQuery,
-      activeCategory as ContentType | "All"
-    );
+    try {
+      // ✅ 1) First check cache in Firebase
+      const cachedResult = await getCachedSearchFromFirebase(targetQuery);
 
-    onSearch(results, targetQuery);
+      // ✅ 2) If cached exists, use it and STOP (no API call)
+      if (cachedResult) {
+        onSearch(cachedResult, targetQuery);
+        return;
+      }
 
-    // ✅ Save query + full results
-    await saveSearchToFirebase(targetQuery, results);
-  } catch (err) {
-    console.error("Search failed:", err);
-  } finally {
-    setIsLoading(false);
-    const resultsSection = document.getElementById("results-section");
-    if (resultsSection) {
-      resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      // ✅ 3) Not cached → call Gemini/fuzzySearch
+      const results = await SearchService.fuzzySearch(
+        targetQuery,
+        activeCategory as ContentType | "All"
+      );
+
+      onSearch(results, targetQuery);
+
+      // ✅ 4) Save to Firebase cache for next users
+      await saveSearchToFirebase(targetQuery, results);
+    } catch (err) {
+      console.error("Search failed:", err);
+    } finally {
+      setIsLoading(false);
+      const resultsSection = document.getElementById("results-section");
+      if (resultsSection) {
+        resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }
-  }
-};
+  };
 
   const onSuggestionClick = (s: string) => {
     setQuery(s);
