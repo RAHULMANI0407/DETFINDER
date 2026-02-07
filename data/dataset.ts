@@ -486,7 +486,7 @@ export const dataset: ContentItem[] = [
     type: ContentType.MOVIE,
     title: "Doraemon: Nobita's Earth Symphony",
     description: "Music is disappearing from the world! Nobita meets Micca, a girl from a planet fueled by music. They travel to the 'Hall of Music' to prevent a creature called 'Noise' from erasing all sound from the universe. Using the 'Licensing Musician' gadget, the friends form an orchestra to play the ultimate symphony and save the world with the power of harmony.",
-    language: Language.NOT_IN_TAMIL,
+    language: Language.TAMIL,
     keywords: ["earth symphony", "music", "orchestra", "instrument", "english"],
     telegram_link: "https://t.me/detearthsymphony/9",
     imdbRating: "6.5",
